@@ -7,3 +7,7 @@ ollama_data/
 
 # generated indexes
 index.duckdb
+
+# Python cache
+__pycache__/
+*.pyc
