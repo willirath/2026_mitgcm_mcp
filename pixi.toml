@@ -1,0 +1,20 @@
+[workspace]
+authors = ["Willi Rath <wrath@geomar.de>"]
+channels = ["conda-forge"]
+name = "2026-dtg"
+platforms = ["osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+python = "3.13.*"
+ollama = ">=0.16.3,<0.17"
+
+[pypi-dependencies]
+duckdb = ">=1.4.4, <2"
+chromadb = ">=1.0"
+ollama = ">=0.6.1, <0.7"
+fastapi = ">=0.129.0, <0.130"
+anthropic = ">=0.83.0, <0.84"
+tree-sitter = ">=0.25.2, <0.26"
