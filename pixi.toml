@@ -9,6 +9,7 @@ version = "0.1.0"
 test = "pytest tests/ -v"
 index = "python -m src.indexer.pipeline"
 embed = "nice -n 10 python -m src.embedder.pipeline"
+serve = "python -m src.server"
 
 [dependencies]
 python = "3.13.*"
@@ -21,3 +22,4 @@ fastapi = ">=0.129.0, <0.130"
 tree-sitter = ">=0.25.2, <0.26"
 tree-sitter-fortran = ">=0.5.1, <0.6"
 pytest = ">=9.0.2, <10"
+mcp = ">=1.0, <2"

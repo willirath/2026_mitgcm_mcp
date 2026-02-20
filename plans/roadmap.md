@@ -61,9 +61,9 @@ Implement code-navigation tools as plain Python functions (no server yet).
 
 Wrap tools and expose them over MCP.
 
-- [ ] FastAPI + `mcp` server wiring all M3 tools
+- [x] `mcp` (FastMCP, stdio) server wiring all M3 tools
 - [ ] Confirmed connectable from Claude Code / Claude Desktop
-- [ ] `docs/mcp-server.md`
+- [x] `docs/mcp-server.md`
 
 **Done when:** A live LLM session can call `get_subroutine("cg3d")` and get source back.
 
