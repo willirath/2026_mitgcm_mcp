@@ -53,6 +53,45 @@ hardcoded to localhost via the `ollama` client default). One-liner in
 
 ---
 
+## Duplicate subroutine names resolved by silent first-match
+
+**Where**: `src/tools.py`, all name-lookup functions
+
+**Problem**: Some subroutine names appear in multiple packages (e.g.
+`DIC_COEFFS_SURF` exists in both `bling` and `dic`; `get_alarm` in both
+`chronos` and `fizhi`). All tools that look up by name (`get_subroutine`,
+`get_callers`, `get_callees`, etc.) silently return the record with the
+lowest `id` — the other is unreachable. Worse, the `calls` table can contain
+callers from *both* packages pointing to different `subroutine_id`s, so the
+caller list for the surfaced record may include calls that were actually to
+the hidden duplicate.
+
+**Fix**: Add a `package` parameter to name-lookup tools so callers can
+disambiguate. Alternatively, surface all matches when duplicates exist and
+let the caller choose. At minimum, warn when a name resolves to multiple
+records.
+
+---
+
+## `get_package_flags_tool` always returns empty
+
+**Where**: `src/indexer/extract.py` or pipeline, `package_options` table
+
+**Problem**: `get_package_flags_tool` returns `[]` for every package,
+including known packages like `autodiff` and `gmredi`, and also for
+nonexistent package names. A real and a fake package are indistinguishable.
+The `package_options` table is likely unpopulated.
+
+**Observed via**: `get_package_flags_tool("autodiff")`,
+`get_package_flags_tool("gmredi")`, `get_package_flags_tool("NONEXISTENT")`
+all returning `[]`.
+
+**Fix**: Investigate whether the indexer populates `package_options` and
+from what source. MITgcm packages define their CPP options in
+`pkg/<name>/PACKAGE_OPTIONS.h` files — these may not be parsed yet.
+
+---
+
 ## INI_PARMS conflates "reads from namelist" with "uses the parameter"
 
 **Where**: `namelist_refs` table, `namelist_to_code` tool
