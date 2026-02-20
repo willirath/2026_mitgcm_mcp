@@ -12,6 +12,8 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 log = logging.getLogger(__name__)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 from ..indexer.schema import DB_PATH, connect as duckdb_connect
 from .store import CHROMA_PATH, get_collection
