@@ -132,10 +132,6 @@ FIXED_DIAG_SPLIT = """\
       END
 """
 
-@pytest.mark.xfail(strict=True, reason=(
-    "known bug: RE_DIAG_FILL only searches single lines; when the quoted "
-    "field name is on a continuation line it is not captured."
-))
 def test_diag_fill_split_across_continuation_lines():
     """DIAGNOSTICS_FILL with array on line N and field string on line N+1 must be captured."""
     recs = extract_file(_write(FIXED_DIAG_SPLIT))
@@ -540,10 +536,6 @@ FIXED_CALL_IN_IF = """\
       END
 """
 
-@pytest.mark.xfail(strict=True, reason=(
-    "known bug: RE_CALL only matches lines starting with whitespace+CALL; "
-    "a CALL embedded in 'IF (cond) CALL FOO' is not captured."
-))
 def test_call_inline_if_extracted():
     """CALL embedded in 'IF (cond) CALL FOO(x)' on one line must be extracted."""
     recs = extract_file(_write(FIXED_CALL_IN_IF))

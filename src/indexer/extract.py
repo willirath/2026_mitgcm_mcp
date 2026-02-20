@@ -43,6 +43,8 @@ RE_END_BLOCK = re.compile(
 )
 
 RE_CALL = re.compile(r'^\s+CALL\s+(\w+)', re.IGNORECASE)
+# B2 fix: also match CALL embedded after IF/ELSEIF on the same line
+RE_CALL_INLINE = re.compile(r'\bCALL\s+(\w+)', re.IGNORECASE)
 RE_NAMELIST_START = re.compile(r'\bNAMELIST\s*/(\w+)/', re.IGNORECASE)
 RE_DIAG_FILL = re.compile(
     r"CALL\s+DIAGNOSTICS_FILL\s*\(\s*(\w+)\s*,\s*'([^']+)'", re.IGNORECASE
@@ -208,10 +210,17 @@ def extract_file(path: Path) -> list[SubroutineRecord]:
                 continue
 
             # CALL statements
+            # Primary: line starts with whitespace then CALL (covers the common case)
             if cm := RE_CALL.match(l):
                 callee = cm.group(1).upper()
                 if callee != sub_name.upper():  # skip self-calls from misparse
                     calls.append(callee)
+            else:
+                # B2 fix: catch inline "IF (cond) CALL FOO(...)" patterns
+                for cm in RE_CALL_INLINE.finditer(l):
+                    callee = cm.group(1).upper()
+                    if callee != sub_name.upper():
+                        calls.append(callee)
 
             # NAMELIST declarations
             if RE_NAMELIST_START.search(l):
@@ -220,9 +229,36 @@ def extract_file(path: Path) -> list[SubroutineRecord]:
                     namelist_params.append((p, group))
                 k = last  # skip consumed continuation lines
 
-            # DIAGNOSTICS_FILL
-            if dm := RE_DIAG_FILL.search(l):
-                diag_fills.append((dm.group(2), dm.group(1)))
+            # DIAGNOSTICS_FILL — B1 fix: join with the next continuation line
+            # so that the array name and quoted field can be on separate lines.
+            if 'DIAGNOSTICS_FILL' in l.upper():
+                # Build a joined version of this line + any immediate continuation
+                joined = l.rstrip('\n\r')
+                nk = k + 1
+                while nk < len(lines) and nk <= sub_end:
+                    nl = lines[nk]
+                    if fixed_form:
+                        if RE_COMMENT_FIXED.match(nl):
+                            nk += 1
+                            continue
+                        if _is_continuation_fixed(nl):
+                            joined += ' ' + nl[6:].rstrip('\n\r')
+                            nk += 1
+                            continue
+                    else:
+                        stripped_nl = nl.rstrip()
+                        lstripped_nl = nl.lstrip()
+                        if stripped_nl.rstrip().endswith('&'):
+                            joined += ' ' + stripped_nl[:-1]
+                            nk += 1
+                            continue
+                        if lstripped_nl.startswith('&'):
+                            joined += ' ' + lstripped_nl[1:].rstrip('\n\r')
+                            nk += 1
+                            continue
+                    break
+                if dm := RE_DIAG_FILL.search(joined):
+                    diag_fills.append((dm.group(2), dm.group(1)))
 
             k += 1
 
