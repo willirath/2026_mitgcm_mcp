@@ -290,7 +290,7 @@ git clone https://github.com/MITgcm/MITgcm
     → seed gotcha catalogue from known-good examples
 ```
 
-MITgcm does not use numbered release tags; index against a pinned commit SHA. Re-run when the experiment requires a newer MITgcm feature.
+MITgcm does not use numbered release tags. Pin the source as a git submodule; the submodule ref is the version record. Re-run the indexing pipeline when the submodule is updated.
 
 ## Domain knowledge seeding
 
