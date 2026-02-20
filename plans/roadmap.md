@@ -44,16 +44,16 @@ Embed subroutines and load into the vector store.
 
 Implement code-navigation tools as plain Python functions (no server yet).
 
-- [ ] `search_code(query, top_k)`
-- [ ] `get_subroutine(name)`
-- [ ] `get_callers(name)` / `get_callees(name)`
-- [ ] `namelist_to_code(param, namelist_file=None)`
-- [ ] `diagnostics_fill_to_source(field_name)`
-- [ ] `get_cpp_requirements(subroutine_name)`
-- [ ] `get_package_flags(package_name)`
-- [ ] `docs/tools.md`
+- [x] `search_code(query, top_k)`
+- [x] `get_subroutine(name)`
+- [x] `get_callers(name)` / `get_callees(name)`
+- [x] `namelist_to_code(param, namelist_file=None)`
+- [x] `diagnostics_fill_to_source(field_name)`
+- [x] `get_cpp_requirements(subroutine_name)`
+- [x] `get_package_flags(package_name)`
+- [x] `docs/tools.md`
 
-**Done when:** Can answer "what code reads `cg3dMaxIter`, and what CPP flag guards it?" from a Python shell.
+**Done when:** Can answer "what code reads `cg3dMaxIter`, and what CPP flag guards it?" from a Python shell. ✓
 
 ---
 
