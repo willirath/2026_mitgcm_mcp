@@ -45,7 +45,13 @@ Each batch embed is wrapped in a two-level fallback:
    even for documents well within the 8192-token limit.
 2. **One-at-a-time fallback** — if the retry also fails, each document in the
    batch is embedded individually, each with up to 3 attempts (10s apart).
-   All retries and fallbacks are logged to stdout.
+   If a document fails all attempts with "input length exceeds context length",
+   it is skipped with a warning and excluded from the upsert. All retries,
+   fallbacks, and skips are logged to stdout.
+
+Known skipped chunk: `diffusivity_free` (chunk 0, `atm_phys`) — 4039 chars of
+dense free-form F90 array code that tokenizes past the CPU Ollama context
+limit. See `plans/backlog.md` for the GPU path that would fix this.
 
 Progress is printed every 100 chunks (previously 500).
 
@@ -108,6 +114,13 @@ To rebuild from scratch:
 rm -rf data/chroma
 pixi run embed
 ```
+
+The pipeline only needs to run once per MITgcm version. Because `data/chroma/`
+is just a directory of files, it can be built on a more powerful host (e.g. a
+GPU server with Ollama) and copied to the local machine for querying. The MCP
+server itself does not need GPU access — it embeds only the user's search query
+(one call per `search_code` invocation). See `plans/backlog.md` for the GPU
+indexing path.
 
 The DuckDB index must exist first (`pixi run index`). The embedder reads from
 `data/index.duckdb` and writes to `data/chroma/`.

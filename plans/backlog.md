@@ -27,6 +27,32 @@ maintain a CPP nesting stack across lines.
 
 ---
 
+## Embedding pipeline: GPU Ollama for larger context and faster indexing
+
+**Where**: `src/embedder/pipeline.py`, `compose.yml`
+
+**Problem**: The CPU Docker Ollama container has an effective context window
+that is too small for some dense free-form Fortran chunks (~4000 chars).
+At least one chunk (`diffusivity_free` chunk 0, `atm_phys`) is skipped with
+a "context length exceeded" warning on each run. Indexing 4910 chunks takes
+~45 minutes on CPU.
+
+**Opportunity**: The embedding pipeline only needs to run once (or on MITgcm
+updates). Running it against a GPU-backed Ollama instance (V100/H100) would:
+- Reduce indexing time from ~45 min to minutes
+- Allow a larger `num_ctx` (e.g. 8192) to eliminate the skipped chunks
+- Enable larger, higher-quality embedding models (e.g. `mxbai-embed-large`)
+
+The MCP server itself requires only a single embedding call per `search_code`
+query and runs fine on a laptop. The natural split is: build `data/chroma/`
+on a GPU host, ship it to the local machine, query locally.
+
+**Wiring change needed**: make the Ollama base URL configurable (currently
+hardcoded to localhost via the `ollama` client default). One-liner in
+`pipeline.py` and `tools.py`.
+
+---
+
 ## INI_PARMS conflates "reads from namelist" with "uses the parameter"
 
 **Where**: `namelist_refs` table, `namelist_to_code` tool

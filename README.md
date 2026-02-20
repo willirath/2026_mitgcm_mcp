@@ -105,3 +105,4 @@ launches automatically via `pixi run serve`.
 | `docs/chromadb.md` | Embedding pipeline, chunking, query examples |
 | `docs/tools.md` | Query tool functions, return shapes, example session |
 | `docs/mcp-server.md` | MCP server, tool list, Claude Code integration |
+| `docs/diagrams.md` | Build pipeline and query-time flow (Mermaid) |

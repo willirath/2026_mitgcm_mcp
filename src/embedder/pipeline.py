@@ -1,5 +1,6 @@
 """Embedding pipeline: read subroutines from DuckDB, embed via ollama, write to ChromaDB."""
 
+import argparse
 import logging
 import time
 from pathlib import Path
@@ -75,7 +76,11 @@ def _doc_chunks(
     ]
 
 
-def run(db_path: Path = DB_PATH, chroma_path: Path = CHROMA_PATH) -> None:
+def run(db_path: Path = DB_PATH, chroma_path: Path = CHROMA_PATH, start_chunk: int = 0) -> None:
+    model_info = ollama.show(EMBED_MODEL)
+    num_ctx = (model_info.modelinfo or {}).get("nomic-bert.context_length", "unknown")
+    log.info(f"{EMBED_MODEL} context_length={num_ctx}")
+
     con = duckdb_connect(db_path)
     rows = con.execute(
         "SELECT id, name, file, package, source_text FROM subroutines ORDER BY id"
@@ -90,8 +95,11 @@ def run(db_path: Path = DB_PATH, chroma_path: Path = CHROMA_PATH) -> None:
         all_chunks.extend(_doc_chunks(r[0], r[1], r[2], r[3], r[4]))
     log.info(f"Generated {len(all_chunks)} chunks from {len(rows)} subroutines")
 
-    total = 0
-    for i in range(0, len(all_chunks), BATCH_SIZE):
+    if start_chunk:
+        log.info(f"Skipping to chunk {start_chunk}")
+
+    total = start_chunk
+    for i in range(start_chunk, len(all_chunks), BATCH_SIZE):
         batch = all_chunks[i : i + BATCH_SIZE]
         ids = [c[0] for c in batch]
         docs = [c[1] for c in batch]
@@ -117,7 +125,7 @@ def run(db_path: Path = DB_PATH, chroma_path: Path = CHROMA_PATH) -> None:
                             keep.append((chunk_id, emb, d, meta))
                             break
                         except Exception as e3:
-                            if "input length exceeds context length" in str(e3):
+                            if "context length" in str(e3):
                                 log.warning(f"skipping chunk {chunk_id} ({len(d)} chars): context length exceeded")
                                 break
                             if attempt == 2:
@@ -143,4 +151,7 @@ def run(db_path: Path = DB_PATH, chroma_path: Path = CHROMA_PATH) -> None:
 
 
 if __name__ == "__main__":
-    run()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--start-chunk", type=int, default=0, help="Skip to this chunk index")
+    args = parser.parse_args()
+    run(start_chunk=args.start_chunk)
