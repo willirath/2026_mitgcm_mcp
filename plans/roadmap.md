@@ -4,11 +4,11 @@
 
 Set up the project environment and pin the MITgcm source.
 
-- [ ] `pixi.toml` with all dependencies (`fastapi`, `chromadb`, `duckdb`, `tree-sitter`, `ollama`, `anthropic`)
-- [ ] MITgcm added as a git submodule (SHA pinned via submodule ref)
-- [ ] `ollama pull nomic-embed-text` confirmed working
+- [x] `pixi.toml` with all dependencies (`fastapi`, `chromadb>=1.0`, `duckdb`, `tree-sitter`, `anthropic` via PyPI; `ollama`, `python=3.13` via conda-forge)
+- [x] MITgcm added as a git submodule (pinned at `decd05a`)
+- [ ] `ollama pull nomic-embed-text` confirmed working (requires `pixi run ollama serve` first)
 
-**Done when:** `pixi run python -c "import duckdb, chromadb, ollama, tree_sitter"` succeeds.
+**Done when:** `pixi run python -c "import duckdb, chromadb, ollama, tree_sitter"` succeeds. ✓
 
 ---
 
