@@ -87,6 +87,12 @@ def namelist_to_code_tool(param: str) -> list[dict]:
 
     Name lookup is case-insensitive. Returns an empty list if not found.
     Each result includes the namelist group (e.g. PARM03).
+
+    Note: results reflect *declaration* sites (where the parameter is read
+    from the namelist), not *use* sites (where the value influences
+    computation). For most parameters this means INI_PARMS is returned.
+    To find where a parameter is actually used, follow up with get_callers
+    or search_code with the parameter name as the query.
     """
     return namelist_to_code(param)
 
