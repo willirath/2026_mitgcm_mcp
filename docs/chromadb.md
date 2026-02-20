@@ -39,12 +39,15 @@ Key constants:
 
 Each batch embed is wrapped in a two-level fallback:
 
-1. **Retry once** after a 2-second pause — handles transient server errors
-   (observed: ollama returning HTTP 400 immediately after a cold start or
-   container restart).
+1. **Retry once** after a 10-second pause — handles transient server errors.
+   Observed cause: resource contention when concurrent MCP calls saturate
+   the ollama container, causing spurious HTTP 400 "context length" rejections
+   even for documents well within the 8192-token limit.
 2. **One-at-a-time fallback** — if the retry also fails, each document in the
-   batch is embedded individually. This eliminates any risk of a combined
-   batch exceeding the model's context window.
+   batch is embedded individually, each with up to 3 attempts (10s apart).
+   All retries and fallbacks are logged to stdout.
+
+Progress is printed every 100 chunks (previously 500).
 
 ## Chunking
 

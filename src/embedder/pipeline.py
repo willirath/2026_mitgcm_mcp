@@ -89,17 +89,29 @@ def run(db_path: Path = DB_PATH, chroma_path: Path = CHROMA_PATH) -> None:
 
         try:
             embeddings = ollama.embed(model=EMBED_MODEL, input=docs)["embeddings"]
-        except Exception:
-            # Retry once after a short pause (handles transient server errors).
-            # If that also fails, fall back to one doc at a time.
-            time.sleep(2)
+        except Exception as e:
+            # Retry after a pause — 400s observed under server load (contention
+            # with concurrent MCP calls), not genuine content-length overflows.
+            print(f"  [retry] batch {i//BATCH_SIZE} failed ({e}), waiting 10s")
+            time.sleep(10)
             try:
                 embeddings = ollama.embed(model=EMBED_MODEL, input=docs)["embeddings"]
-            except Exception:
-                embeddings = [
-                    ollama.embed(model=EMBED_MODEL, input=[d])["embeddings"][0]
-                    for d in docs
-                ]
+            except Exception as e2:
+                # Fall back to one doc at a time, each with its own retry.
+                print(f"  [fallback] batch {i//BATCH_SIZE} still failing ({e2}), one-at-a-time")
+                embeddings = []
+                for d in docs:
+                    for attempt in range(3):
+                        try:
+                            embeddings.append(
+                                ollama.embed(model=EMBED_MODEL, input=[d])["embeddings"][0]
+                            )
+                            break
+                        except Exception as e3:
+                            if attempt == 2:
+                                raise
+                            print(f"  [fallback retry {attempt+1}] {e3}, waiting 10s")
+                            time.sleep(10)
 
         collection.upsert(
             ids=ids,
@@ -109,7 +121,7 @@ def run(db_path: Path = DB_PATH, chroma_path: Path = CHROMA_PATH) -> None:
         )
 
         total += len(batch)
-        if total % 500 == 0 or total == len(all_chunks):
+        if total % 100 == 0 or total == len(all_chunks):
             print(f"  Embedded {total}/{len(all_chunks)}")
 
     print(f"\nDone. {collection.count()} chunks ({len(rows)} subroutines).")
