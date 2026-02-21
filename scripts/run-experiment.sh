@@ -5,7 +5,6 @@ EXP_ABS=$(realpath "$EXP")
 REPO=$(realpath "$(dirname "$0")/..")
 NP=${MITGCM_NP:-2}
 docker run --rm \
-  --platform linux/amd64 \
   --user "$(id -u):$(id -g)" \
   -v "$REPO/MITgcm:/MITgcm:ro" \
   -v "$EXP_ABS:/experiment" \

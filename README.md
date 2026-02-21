@@ -130,3 +130,4 @@ pixi run serve
 | `docs/mcp-server.md` | MCP server, all tools, integration |
 | `docs/runtime.md` | MITgcm Docker runtime, experiments |
 | `docs/diagrams.md` | Pipeline and query-time flow diagrams |
+| `docs/release.md` | Release process (build, push, tag, publish) |

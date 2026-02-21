@@ -42,13 +42,16 @@ understands what the project does and how to install it.
 
 Reorganise the Docker setup and produce the self-contained MCP image.
 
-- [ ] Move `Dockerfile` → `docker/mitgcm/Dockerfile`
-- [ ] Create `docker/mcp/Dockerfile` (two-stage: pull model, assemble image)
-- [ ] Create `docker/mcp/entrypoint.sh`
-- [ ] Create `docker/mcp/.dockerignore`
-- [ ] Update `compose.yml` — named network `mitgcm-net`, dev-only comments
-- [ ] Update `pixi.toml` — fix `build-image` path, add `build-mcp-image` task
-- [ ] Update `.mcp.json` — `docker run --rm -i ghcr.io/willirath/mitgcm-mcp:v2026.02.1`
+- [x] Move `Dockerfile` → `docker/mitgcm/Dockerfile`
+- [x] Create `docker/mcp/Dockerfile` (two-stage: pull model, assemble image)
+- [x] Create `docker/mcp/entrypoint.sh`
+- [x] Create `docker/mcp/.dockerignore`
+- [x] Update `compose.yml` — named network `mitgcm-net`, dev-only comments
+- [x] Update `pixi.toml` — fix `build-image` path, add `build-mcp-image` task
+- [x] Update `.mcp.json` — `docker run --rm -i ghcr.io/willirath/mitgcm-mcp:v2026.02.1`
+- [x] Pin all base images to sha256 digests
+- [x] Switch `docker/mitgcm/Dockerfile` to `debian:bookworm-slim` + MPICH
+- [ ] Rebuild `mitgcm:latest` and `mitgcm-mcp:latest` after Debian+MPICH+pinning changes
 
 **Done when:** `pixi run build-mcp-image` succeeds with populated `data/`;
 `docker run --rm -i mitgcm-mcp:latest` starts without error.
@@ -59,13 +62,17 @@ Reorganise the Docker setup and produce the self-contained MCP image.
 
 Tag, publish, and verify.
 
-- [ ] Build MCP image with current `data/`
-- [ ] Push image to GHCR (`v2026.02.1` + `latest`)
-- [ ] Package `rotating_convection.tar.gz` release asset
-- [ ] Create GitHub release `v2026.02.1` with both assets
+- [ ] Add `package-rotating-convection` task to `pixi.toml`
+- [ ] Write `docs/release.md` — release process documentation
+- [ ] Rebuild `mitgcm:latest` with Debian+MPICH; verify full rotating_convection build+run
+- [ ] Rebuild `mitgcm-mcp:latest`; smoke test `docker run --rm -i`
+- [ ] `docker login ghcr.io` with PAT (packages:write)
+- [ ] Push MCP image to GHCR (`v2026.02.1` + `latest`)
 - [ ] Set GHCR package visibility to public
-- [ ] Smoke test: `claude mcp add --transport stdio --scope user mitgcm -- docker run --rm -i ghcr.io/willirath/mitgcm-mcp:v2026.02.1`
-- [ ] Git tag `v2026.02.1`
+- [ ] Package `rotating_convection.tar.gz` (`pixi run package-rotating-convection`)
+- [ ] Create GitHub release `v2026.02.1` with tar.gz asset and image install note
+- [ ] Smoke test on clean machine: install via `claude mcp add`, verify tool responses
+- [ ] Git tag `v2026.02.1` and push
 
 **Done when:** A user on a clean machine can install the MCP server with one
 command and get responses from all tools.
