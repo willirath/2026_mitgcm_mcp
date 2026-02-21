@@ -21,6 +21,8 @@ table is incomplete. Needs a pass to reflect the current state.
 > Should the README address the academic motivation / evaluation angle? Or keep
 > it purely operational?)
 
+./.
+
 ---
 
 ### docs/ consistency review
@@ -43,6 +45,8 @@ Known gaps:
 > the diagrams in `docs/diagrams.md` be updated to include the docs index
 > pipeline?)
 
+./.
+
 ---
 
 ### Tool docstrings
@@ -61,6 +65,8 @@ similar real-world caveats.
 >
 > (Any specific tools where the docstring felt misleading or incomplete during
 > actual use? Any style preferences — terse vs verbose?)
+
+./.
 
 ---
 
@@ -167,4 +173,4 @@ baked in. See `plans/release-architecture.md`.
 - [ ] Image built, published to GHCR, set public
 - [ ] `rotating_convection.tar.gz` release asset built and uploaded
 - [ ] Smoke test passes
-- [ ] Git tag `v0.1.0`
+- [ ] Git tag `2026.02`

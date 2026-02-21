@@ -1,5 +1,12 @@
 # Release architecture — final decisions
 
+## Versioning
+
+CalVer: `YYYY.MM`. First release tag: `2026.02`. Image tag on GHCR: `2026.02`
+(and `latest`).
+
+---
+
 ## Distribution model
 
 Ship a self-contained Docker image. No pip package for v0.1.
