@@ -1,6 +1,6 @@
 # Tools
 
-`src/tools.py` exposes seven plain Python callables over the DuckDB code graph
+`src/tools.py` exposes eight plain Python callables over the DuckDB code graph
 and ChromaDB semantic index built in M1–M2. No server or framework is involved;
 functions return plain dicts and lists so they can be easily serialised for the
 M4 MCP layer.
@@ -9,7 +9,7 @@ M4 MCP layer.
 
 ```
 src/
-└── tools.py        seven public functions
+└── tools.py        eight public functions
 ```
 
 ## Functions
@@ -40,9 +40,12 @@ Return shape:
 ]
 ```
 
-### `get_subroutine(name, _db_path=...)`
+### `get_subroutine(name, package=None, _db_path=...)`
 
 Fetch one subroutine by name (case-insensitive). Returns `None` if not found.
+Raises `ValueError` if the name matches subroutines in multiple packages and no
+`package=` is given; call `find_subroutines()` first to discover which packages
+contain the name.
 
 ```python
 {
@@ -56,7 +59,25 @@ Fetch one subroutine by name (case-insensitive). Returns `None` if not found.
 }
 ```
 
-### `get_callers(name, _db_path=...)`
+### `find_subroutines(name, _db_path=...)`
+
+Return all subroutines matching `name` across all packages (case-insensitive).
+Returns an empty list if none found. Does not include `source_text`.
+
+Use this when a name may exist in multiple packages and you need to discover
+which packages contain it before calling `get_subroutine` or `get_source_tool`
+with `package=`.
+
+Return shape:
+
+```python
+[
+    {"id": 20, "name": "DIC_COEFFS_SURF", "file": "bling/src/...", "package": "bling", "line_start": 1, "line_end": 80},
+    {"id": 21, "name": "DIC_COEFFS_SURF", "file": "dic/src/...",   "package": "dic",   "line_start": 1, "line_end": 90},
+]
+```
+
+### `get_callers(name, package=None, _db_path=...)`
 
 Return all subroutines that call `name` (case-insensitive). Empty list if none.
 
@@ -64,7 +85,7 @@ Return all subroutines that call `name` (case-insensitive). Empty list if none.
 [{"id": 7, "name": "PRE_CG3D", "file": "...", "package": "model", "line_start": 1, "line_end": 50}]
 ```
 
-### `get_callees(name, _db_path=...)`
+### `get_callees(name, package=None, _db_path=...)`
 
 Return all subroutine names called by `name` (case-insensitive). Empty list if
 none.

@@ -28,7 +28,7 @@ Desired behaviour (also xfail — fix not yet implemented)
 """
 
 import pytest
-from src.tools import get_callees, get_callers, get_subroutine
+from src.tools import find_subroutines, get_callees, get_callers, get_subroutine
 from src.indexer.schema import connect
 
 
@@ -75,23 +75,21 @@ def dup_db(tmp_path_factory):
 
 
 class TestGetSubroutineCurrentBehaviour:
-    """get_subroutine silently returns only one of the two SHARED_SUB entries."""
+    """get_subroutine raises ValueError when a name matches multiple packages."""
 
     def test_returns_something(self, dup_db):
-        """get_subroutine does return a result — it is not None."""
-        result = get_subroutine("SHARED_SUB", _db_path=dup_db)
-        assert result is not None
+        """get_subroutine raises ValueError for an ambiguous name — it no longer silently returns one result."""
+        with pytest.raises(ValueError):
+            get_subroutine("SHARED_SUB", _db_path=dup_db)
 
     def test_returns_lowest_id(self, dup_db):
-        """The result is always the row with the lowest database id (id 20, pkg_a).
+        """The lowest-id-wins behaviour is gone; get_subroutine now raises ValueError for ambiguous names.
 
-        This is an artefact of DuckDB's unspecified but de-facto stable row
-        ordering: fetchone() picks the first matching row, which happens to be
-        the one inserted first (lowest id).
+        Previously the function returned the pkg_a copy (id 20) silently. Now it
+        raises so that callers are forced to disambiguate via package=.
         """
-        result = get_subroutine("SHARED_SUB", _db_path=dup_db)
-        assert result["id"] == 20
-        assert result["package"] == "pkg_a"
+        with pytest.raises(ValueError):
+            get_subroutine("SHARED_SUB", _db_path=dup_db)
 
     def test_pkg_b_copy_is_reachable(self, dup_db):
         """The pkg_b copy (id 21) is reachable via the package= parameter."""
@@ -167,17 +165,13 @@ class TestDesiredBehaviourGetSubroutine:
         assert result["package"] == "pkg_b"
 
     def test_ambiguous_lookup_raises_or_warns(self, dup_db):
-        """An unqualified lookup of a duplicate name should not silently drop one copy.
+        """An unqualified lookup of a duplicate name raises ValueError.
 
-        The desired behaviour is either a raised exception, a warning, or
-        returning a list.  Currently no exception is raised.
+        get_subroutine raises rather than silently dropping one copy, so
+        callers are forced to disambiguate via package= or use find_subroutines().
         """
-        import warnings
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            result = get_subroutine("SHARED_SUB", _db_path=dup_db)
-        # Expect a warning to have been issued — currently none is raised.
-        assert len(caught) >= 1, "Expected a warning for ambiguous name lookup; got none"
+        with pytest.raises(ValueError):
+            get_subroutine("SHARED_SUB", _db_path=dup_db)
 
 
 class TestDesiredBehaviourGetCallers:
@@ -210,3 +204,34 @@ class TestDesiredBehaviourGetCallees:
         results = get_callees("SHARED_SUB", package="pkg_b", _db_path=dup_db)
         names = {r["callee_name"] for r in results}
         assert names == {"UNIQUE_CALLEE"}
+
+
+# ---------------------------------------------------------------------------
+# find_subroutines — discovers all copies of a name across packages
+# ---------------------------------------------------------------------------
+
+
+class TestFindSubroutines:
+    """find_subroutines always returns all copies of a name."""
+
+    def test_find_returns_both_copies(self, dup_db):
+        """find_subroutines returns both the pkg_a and pkg_b copies of SHARED_SUB."""
+        results = find_subroutines("SHARED_SUB", _db_path=dup_db)
+        assert len(results) == 2
+        assert {r["package"] for r in results} == {"pkg_a", "pkg_b"}
+
+    def test_find_not_found_returns_empty(self, dup_db):
+        """find_subroutines returns an empty list when the name does not exist."""
+        results = find_subroutines("NONEXISTENT", _db_path=dup_db)
+        assert results == []
+
+    def test_find_case_insensitive(self, dup_db):
+        """find_subroutines matches names case-insensitively."""
+        results = find_subroutines("shared_sub", _db_path=dup_db)
+        assert len(results) == 2
+
+    def test_find_no_source_text(self, dup_db):
+        """Returned dicts do not include source_text."""
+        results = find_subroutines("SHARED_SUB", _db_path=dup_db)
+        for r in results:
+            assert "source_text" not in r

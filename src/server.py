@@ -4,6 +4,7 @@ from mcp.server.fastmcp import FastMCP
 
 from src.tools import (
     diagnostics_fill_to_source,
+    find_subroutines,
     get_callees,
     get_callers,
     get_cpp_requirements,
@@ -28,6 +29,19 @@ def search_code_tool(query: str, top_k: int = 5) -> list[dict]:
 
 
 @mcp.tool()
+def find_subroutines_tool(name: str) -> list[dict]:
+    """Return all subroutines matching name, across all packages.
+
+    Name lookup is case-insensitive. Returns an empty list if not found.
+    Returns id, name, file, package, line_start, line_end for each match.
+    Use this to discover which packages contain a subroutine when the name
+    may appear in multiple packages (e.g. DIC_COEFFS_SURF in bling and dic).
+    Follow up with get_source_tool(name, package=...) for source lines.
+    """
+    return find_subroutines(name)
+
+
+@mcp.tool()
 def get_subroutine_tool(name: str, package: str | None = None) -> dict | None:
     """Return metadata for a subroutine by name (no source text).
 
@@ -35,8 +49,8 @@ def get_subroutine_tool(name: str, package: str | None = None) -> dict | None:
     Name lookup is case-insensitive. Returns None if not found.
     Use get_source_tool to retrieve the actual source lines.
     When multiple subroutines share the same name across packages, pass
-    package= to disambiguate; without it a warning is emitted and the
-    lowest-id record is returned.
+    package= to disambiguate; without it a ValueError is raised. Use
+    find_subroutines_tool to discover which packages contain the name.
     """
     result = get_subroutine(name, package=package)
     if result is None:
@@ -56,7 +70,7 @@ def get_source_tool(name: str, package: str | None = None, offset: int = 0, limi
     a list of strings without trailing newlines. Returns None if not found.
     Use get_subroutine_tool first to see total line count (line_end - line_start).
     Pass package= when multiple subroutines share the same name to select the
-    correct copy.
+    correct copy; without it a ValueError is raised if the name is ambiguous.
     """
     result = get_subroutine(name, package=package)
     if result is None:

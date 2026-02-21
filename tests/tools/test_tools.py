@@ -3,6 +3,7 @@
 import pytest
 from src.tools import (
     diagnostics_fill_to_source,
+    find_subroutines,
     get_callees,
     get_callers,
     get_cpp_requirements,
@@ -40,6 +41,29 @@ def test_get_subroutine_mixed_case(test_db):
     result = get_subroutine("Cg3D", _db_path=test_db)
     assert result is not None
     assert result["name"] == "CG3D"
+
+
+# ---------------------------------------------------------------------------
+# find_subroutines
+# ---------------------------------------------------------------------------
+
+
+def test_find_subroutines_unique_name(test_db):
+    results = find_subroutines("CG3D", _db_path=test_db)
+    assert len(results) == 1
+    assert results[0]["name"] == "CG3D"
+    assert results[0]["package"] == "model"
+
+
+def test_find_subroutines_not_found(test_db):
+    results = find_subroutines("NONEXISTENT", _db_path=test_db)
+    assert results == []
+
+
+def test_find_subroutines_no_source_text(test_db):
+    results = find_subroutines("CG3D", _db_path=test_db)
+    assert len(results) == 1
+    assert "source_text" not in results[0]
 
 
 # ---------------------------------------------------------------------------

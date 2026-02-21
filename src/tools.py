@@ -1,6 +1,5 @@
 """Plain Python callables over the DuckDB code graph and ChromaDB semantic index."""
 
-import warnings
 from pathlib import Path
 
 from src.indexer.schema import DB_PATH, connect
@@ -57,12 +56,34 @@ def search_code(query: str, top_k: int = 5, _db_path: Path = DB_PATH, _chroma_pa
     return out
 
 
+def find_subroutines(name: str, _db_path: Path = DB_PATH) -> list[dict]:
+    """Return all subroutines matching name across all packages (case-insensitive).
+
+    Returns an empty list if none found. Does not include source_text.
+    Use this when a name may exist in multiple packages and you need to discover
+    which packages contain it before calling get_subroutine or get_source_tool
+    with package=.
+    """
+    con = connect(_db_path)
+    try:
+        rows = con.execute(
+            "SELECT id, name, file, package, line_start, line_end FROM subroutines WHERE upper(name) = upper(?)",
+            [name],
+        ).fetchall()
+    finally:
+        con.close()
+
+    return [{"id": r[0], "name": r[1], "file": r[2], "package": r[3], "line_start": r[4], "line_end": r[5]} for r in rows]
+
+
 def get_subroutine(name: str, package: str | None = None, _db_path: Path = DB_PATH) -> dict | None:
     """Return subroutine metadata and source text, or None if not found.
 
     When package is provided, restricts the lookup to that package.  When
-    package is None and multiple subroutines share the same name, emits a
-    warning and returns the lowest-id record.
+    package is None and exactly one subroutine matches, returns it.  When
+    package is None and multiple subroutines share the same name, raises
+    ValueError listing the packages; call find_subroutines() first to discover
+    which packages contain the name.
     """
     con = connect(_db_path)
     try:
@@ -82,13 +103,12 @@ def get_subroutine(name: str, package: str | None = None, _db_path: Path = DB_PA
     if not rows:
         return None
     if len(rows) > 1:
-        warnings.warn(
-            f"get_subroutine: {len(rows)} subroutines named {name!r} found in packages "
-            f"{[r[3] for r in rows]}; returning lowest-id record. "
-            "Pass package= to disambiguate.",
-            stacklevel=2,
+        packages = [r[3] for r in rows]
+        raise ValueError(
+            f"get_subroutine: {len(rows)} subroutines named {name!r} found in packages {packages}; "
+            "pass package= to disambiguate, or use find_subroutines() to list all copies"
         )
-    row = min(rows, key=lambda r: r[0])
+    row = rows[0]
     return {"id": row[0], "name": row[1], "file": row[2], "package": row[3], "line_start": row[4], "line_end": row[5], "source_text": row[6]}
 
 
