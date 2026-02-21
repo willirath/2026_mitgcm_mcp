@@ -68,7 +68,7 @@ Tag, publish, and verify.
 - [x] Rebuild `mitgcm-mcp:latest`; smoke test `docker run --rm -i`
 - [x] `docker login ghcr.io` with PAT (packages:write)
 - [x] Push MCP image to GHCR (`v2026.02.1` + `latest`)
-- [ ] Set GHCR package visibility to public
+- [x] Set GHCR package visibility to public
 - [x] Package `rotating_convection.tar.gz` (`pixi run package-rotating-convection`)
 - [ ] Create GitHub release `v2026.02.1` with tar.gz asset and image install note
 - [ ] Smoke test on clean machine: install via `claude mcp add`/`codex mcp add`, verify tool responses
