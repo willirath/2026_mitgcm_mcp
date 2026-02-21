@@ -38,10 +38,7 @@ T_BOTTOM     = 0.0    # degC at z = -H_EDGE (also the heat-bath temperature)
 # mask = 1.0 at bottom cell, 0.0 elsewhere -> full restoring at bottom only.
 RBCS_MASK_BOTTOM = 1.0    # mask weight at bottom cell (1 = full restoring at tauRelaxT)
 
-OUTPUT_DIR = (
-    pathlib.Path(__file__).resolve().parent.parent
-    / "experiments" / "rotating_convection" / "input"
-)
+OUTPUT_DIR = pathlib.Path(__file__).resolve().parent / "input"
 
 
 def cell_centres_xy():

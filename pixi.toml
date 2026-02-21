@@ -15,7 +15,7 @@ build-image    = "docker build --platform linux/amd64 -t mitgcm:latest ."
 setup-tutorial = "bash scripts/setup-tutorial.sh"
 build-tutorial = "bash scripts/build-experiment.sh experiments/tutorial_rotating_tank"
 run-tutorial   = "bash scripts/run-experiment.sh experiments/tutorial_rotating_tank"
-gen-rotating-convection   = "python scripts/gen-rotating-convection.py"
+gen-rotating-convection   = "python experiments/rotating_convection/gen.py"
 build-rotating-convection = "bash scripts/build-experiment.sh experiments/rotating_convection"
 run-rotating-convection   = "bash scripts/run-experiment.sh experiments/rotating_convection"
 
