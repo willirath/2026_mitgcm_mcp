@@ -7,4 +7,5 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libnetcdff-dev \
     make \
     perl \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*

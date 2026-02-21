@@ -94,7 +94,7 @@ Containerised MITgcm build that runs locally via Docker and translates directly 
 - [x] `scripts/setup-tutorial.sh` — copies binary input files from submodule
 - [x] `docs/runtime.md`
 
-**Done when:** `verification/tutorial_rotating_tank` runs to completion inside the container and produces output pickup files.
+**Done when:** `verification/tutorial_rotating_tank` runs to completion inside the container and produces output pickup files. ✓
 
 ---
 

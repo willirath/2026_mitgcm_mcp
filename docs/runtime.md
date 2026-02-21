@@ -108,6 +108,16 @@ The `linux_amd64_gfortran` optfile sets `-fconvert=big-endian` (required for
 MITgcm's raw binary I/O), `-fallow-argument-mismatch` (needed for gfortran 10+
 with MITgcm's F77-style mixed-type calls), and `-mcmodel=medium`. Setting
 `MPI=true` switches the compilers from `gfortran` to `mpif77`/`mpif90`/`mpicc`.
+`MPI_HOME` is set explicitly because the optfile uses `pkg-config` to find MPI
+includes only when `pkg-config` is available; pointing `MPI_HOME` directly to
+`/usr/lib/x86_64-linux-gnu/openmpi` bypasses this lookup.
+
+The `/MITgcm` volume is mounted **without** `:ro` even though the build writes
+no permanent changes to it. genmake2's `make depend` step expands Fortran
+exchange templates (`eesupp/*.template`) into source files; this sed-based
+expansion runs inside the source tree and fails on a read-only mount. Since the
+container is ephemeral (`--rm`), any writes to `/MITgcm` disappear after the
+build completes.
 
 ### 4. Run the experiment
 
