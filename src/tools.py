@@ -1,5 +1,6 @@
 """Plain Python callables over the DuckDB code graph and ChromaDB semantic index."""
 
+import warnings
 from pathlib import Path
 
 from src.indexer.schema import DB_PATH, connect
@@ -56,54 +57,106 @@ def search_code(query: str, top_k: int = 5, _db_path: Path = DB_PATH, _chroma_pa
     return out
 
 
-def get_subroutine(name: str, _db_path: Path = DB_PATH) -> dict | None:
-    """Return subroutine metadata and source text, or None if not found."""
+def get_subroutine(name: str, package: str | None = None, _db_path: Path = DB_PATH) -> dict | None:
+    """Return subroutine metadata and source text, or None if not found.
+
+    When package is provided, restricts the lookup to that package.  When
+    package is None and multiple subroutines share the same name, emits a
+    warning and returns the lowest-id record.
+    """
     con = connect(_db_path)
     try:
-        row = con.execute(
-            "SELECT id, name, file, package, line_start, line_end, source_text FROM subroutines WHERE upper(name) = upper(?)",
-            [name],
-        ).fetchone()
+        if package is not None:
+            rows = con.execute(
+                "SELECT id, name, file, package, line_start, line_end, source_text FROM subroutines WHERE upper(name) = upper(?) AND upper(package) = upper(?)",
+                [name, package],
+            ).fetchall()
+        else:
+            rows = con.execute(
+                "SELECT id, name, file, package, line_start, line_end, source_text FROM subroutines WHERE upper(name) = upper(?)",
+                [name],
+            ).fetchall()
     finally:
         con.close()
 
-    if row is None:
+    if not rows:
         return None
+    if len(rows) > 1:
+        warnings.warn(
+            f"get_subroutine: {len(rows)} subroutines named {name!r} found in packages "
+            f"{[r[3] for r in rows]}; returning lowest-id record. "
+            "Pass package= to disambiguate.",
+            stacklevel=2,
+        )
+    row = min(rows, key=lambda r: r[0])
     return {"id": row[0], "name": row[1], "file": row[2], "package": row[3], "line_start": row[4], "line_end": row[5], "source_text": row[6]}
 
 
-def get_callers(name: str, _db_path: Path = DB_PATH) -> list[dict]:
-    """Return subroutines that call the named subroutine."""
+def get_callers(name: str, package: str | None = None, _db_path: Path = DB_PATH) -> list[dict]:
+    """Return subroutines that call the named subroutine.
+
+    When package is provided, restricts the lookup to callers that belong to
+    that package (i.e. subroutines within the package that call the named
+    subroutine).
+    """
     con = connect(_db_path)
     try:
-        rows = con.execute(
-            """
-            SELECT s.id, s.name, s.file, s.package, s.line_start, s.line_end
-            FROM subroutines s
-            JOIN calls c ON c.caller_id = s.id
-            WHERE upper(c.callee_name) = upper(?)
-            """,
-            [name],
-        ).fetchall()
+        if package is not None:
+            rows = con.execute(
+                """
+                SELECT s.id, s.name, s.file, s.package, s.line_start, s.line_end
+                FROM subroutines s
+                JOIN calls c ON c.caller_id = s.id
+                WHERE upper(c.callee_name) = upper(?)
+                  AND upper(s.package) = upper(?)
+                """,
+                [name, package],
+            ).fetchall()
+        else:
+            rows = con.execute(
+                """
+                SELECT s.id, s.name, s.file, s.package, s.line_start, s.line_end
+                FROM subroutines s
+                JOIN calls c ON c.caller_id = s.id
+                WHERE upper(c.callee_name) = upper(?)
+                """,
+                [name],
+            ).fetchall()
     finally:
         con.close()
 
     return [{"id": r[0], "name": r[1], "file": r[2], "package": r[3], "line_start": r[4], "line_end": r[5]} for r in rows]
 
 
-def get_callees(name: str, _db_path: Path = DB_PATH) -> list[dict]:
-    """Return subroutines called by the named subroutine."""
+def get_callees(name: str, package: str | None = None, _db_path: Path = DB_PATH) -> list[dict]:
+    """Return subroutines called by the named subroutine.
+
+    When package is provided, restricts the lookup to the copy of the
+    subroutine in that package, returning only its callees.
+    """
     con = connect(_db_path)
     try:
-        rows = con.execute(
-            """
-            SELECT DISTINCT c.callee_name
-            FROM calls c
-            JOIN subroutines s ON s.id = c.caller_id
-            WHERE upper(s.name) = upper(?)
-            """,
-            [name],
-        ).fetchall()
+        if package is not None:
+            rows = con.execute(
+                """
+                SELECT DISTINCT c.callee_name
+                FROM calls c
+                JOIN subroutines s ON s.id = c.caller_id
+                WHERE upper(s.name) = upper(?)
+                  AND upper(s.package) = upper(?)
+                """,
+                [name, package],
+            ).fetchall()
+        else:
+            rows = con.execute(
+                """
+                SELECT DISTINCT c.callee_name
+                FROM calls c
+                JOIN subroutines s ON s.id = c.caller_id
+                WHERE upper(s.name) = upper(?)
+                """,
+                [name],
+            ).fetchall()
     finally:
         con.close()
 

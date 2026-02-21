@@ -28,14 +28,17 @@ def search_code_tool(query: str, top_k: int = 5) -> list[dict]:
 
 
 @mcp.tool()
-def get_subroutine_tool(name: str) -> dict | None:
+def get_subroutine_tool(name: str, package: str | None = None) -> dict | None:
     """Return metadata for a subroutine by name (no source text).
 
     Returns id, name, file, package, line_start, line_end.
     Name lookup is case-insensitive. Returns None if not found.
     Use get_source_tool to retrieve the actual source lines.
+    When multiple subroutines share the same name across packages, pass
+    package= to disambiguate; without it a warning is emitted and the
+    lowest-id record is returned.
     """
-    result = get_subroutine(name)
+    result = get_subroutine(name, package=package)
     if result is None:
         return None
     result.pop("source_text", None)
@@ -43,7 +46,7 @@ def get_subroutine_tool(name: str) -> dict | None:
 
 
 @mcp.tool()
-def get_source_tool(name: str, offset: int = 0, limit: int = 100) -> dict | None:
+def get_source_tool(name: str, package: str | None = None, offset: int = 0, limit: int = 100) -> dict | None:
     """Return paginated source lines for a subroutine.
 
     offset: first line to return (0-based within the subroutine source).
@@ -52,8 +55,10 @@ def get_source_tool(name: str, offset: int = 0, limit: int = 100) -> dict | None
     Returns {name, total_lines, offset, lines: [...]}. Lines are returned as
     a list of strings without trailing newlines. Returns None if not found.
     Use get_subroutine_tool first to see total line count (line_end - line_start).
+    Pass package= when multiple subroutines share the same name to select the
+    correct copy.
     """
-    result = get_subroutine(name)
+    result = get_subroutine(name, package=package)
     if result is None:
         return None
     all_lines = result["source_text"].splitlines()
@@ -63,22 +68,25 @@ def get_source_tool(name: str, offset: int = 0, limit: int = 100) -> dict | None
 
 
 @mcp.tool()
-def get_callers_tool(name: str) -> list[dict]:
+def get_callers_tool(name: str, package: str | None = None) -> list[dict]:
     """Return all subroutines that call the named subroutine.
 
     Name lookup is case-insensitive. Returns an empty list if none found.
+    Pass package= to restrict the result to callers within a specific package.
     """
-    return get_callers(name)
+    return get_callers(name, package=package)
 
 
 @mcp.tool()
-def get_callees_tool(name: str) -> list[dict]:
+def get_callees_tool(name: str, package: str | None = None) -> list[dict]:
     """Return all subroutine names called by the named subroutine.
 
     Name lookup is case-insensitive. Returns an empty list if none found.
     Callees not present in the subroutines table are still returned by name.
+    Pass package= to scope the lookup to a specific package copy of the
+    subroutine when the name is shared across packages.
     """
-    return get_callees(name)
+    return get_callees(name, package=package)
 
 
 @mcp.tool()
