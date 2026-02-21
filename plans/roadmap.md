@@ -83,13 +83,27 @@ First version of the tank-specific knowledge layer.
 
 ---
 
-## M6 — First real experiment
+## M6 — MITgcm runtime environment
+
+Containerised MITgcm build that runs locally via Docker and translates directly to Singularity on HPC.
+
+- [ ] `Dockerfile` — multi-stage build: gfortran + OpenMPI + NetCDF-Fortran, then compile MITgcm for a generic ocean configuration
+- [ ] `compose.yml` service (or standalone `docker build` / `docker run` wrappers) with a volume mount for experiment working directories
+- [ ] `pixi run build-mitgcm` task — builds the image
+- [ ] `pixi run run-experiment` task — takes a working directory, launches the container, streams stdout/stderr, exits with MITgcm's exit code
+- [ ] `docs/runtime.md`
+
+**Done when:** `verification/tutorial_rotating_tank` runs to completion inside the container and produces output pickup files.
+
+---
+
+## M7 — First real experiment
 
 Walk one experiment end-to-end through the system.
 
 - [ ] Pick a concrete tank setup (e.g. rotating convection)
 - [ ] Use the system to generate a full configuration
-- [ ] Run it in MITgcm
+- [ ] Run it in MITgcm via the M6 runtime
 - [ ] Feed gaps and corrections back into M5
 
 **Done when:** The experiment runs to completion and any knowledge gaps found are closed.
