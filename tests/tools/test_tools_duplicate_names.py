@@ -93,27 +93,10 @@ class TestGetSubroutineCurrentBehaviour:
         assert result["id"] == 20
         assert result["package"] == "pkg_a"
 
-    @pytest.mark.xfail(reason="Bug: pkg_b copy (id 21) is silently shadowed; get_subroutine returns only one row")
     def test_pkg_b_copy_is_reachable(self, dup_db):
-        """The pkg_b copy (id 21) should also be reachable — currently it is not."""
-        result = get_subroutine("SHARED_SUB", _db_path=dup_db)
-        # Under current code this always gives pkg_a; pkg_b is unreachable via this call.
-        # The test checks for the pkg_b copy specifically; it must fail until the bug is fixed.
+        """The pkg_b copy (id 21) is reachable via the package= parameter."""
+        result = get_subroutine("SHARED_SUB", package="pkg_b", _db_path=dup_db)
         assert result["package"] == "pkg_b"
-
-    @pytest.mark.xfail(reason="Bug: get_subroutine returns a single dict, not a list; cannot expose both copies")
-    def test_both_copies_returned(self, dup_db):
-        """get_subroutine must somehow expose both copies when the name is ambiguous.
-
-        Under the current signature (returns dict | None) this is impossible.
-        The desired fix would either raise, return a list, or require a
-        package/file qualifier.  This test documents that the current single-
-        dict return cannot satisfy the requirement.
-        """
-        result = get_subroutine("SHARED_SUB", _db_path=dup_db)
-        # A dict is not a list — the assertion will fail, confirming the bug.
-        assert isinstance(result, list)
-        assert len(result) == 2
 
 
 class TestGetCallersCurrentBehaviour:
@@ -125,27 +108,15 @@ class TestGetCallersCurrentBehaviour:
         names = {r["name"] for r in results}
         assert names == {"CALLER_A", "CALLER_B"}
 
-    @pytest.mark.xfail(reason="Bug: callers cannot be scoped to one copy; pkg_a copy's callers bleed into pkg_b results")
     def test_pkg_a_callers_excludes_caller_b(self, dup_db):
-        """When scoped to the pkg_a copy, only CALLER_A should appear.
-
-        There is currently no way to express this constraint through the
-        get_callers API; the unscoped call always returns both.
-        """
-        results = get_callers("SHARED_SUB", _db_path=dup_db)
-        # Under current code, CALLER_B appears even though it was intended for
-        # the pkg_b copy.  This assertion will fail, documenting the bug.
+        """When scoped to the pkg_a copy via package=, only CALLER_A appears."""
+        results = get_callers("SHARED_SUB", package="pkg_a", _db_path=dup_db)
         names = {r["name"] for r in results}
         assert "CALLER_B" not in names
 
-    @pytest.mark.xfail(reason="Bug: callers cannot be scoped to one copy; pkg_b copy's callers bleed into pkg_a results")
     def test_pkg_b_callers_excludes_caller_a(self, dup_db):
-        """When scoped to the pkg_b copy, only CALLER_B should appear.
-
-        The current get_callers("SHARED_SUB") returns both; there is no way
-        to distinguish between the two copies.
-        """
-        results = get_callers("SHARED_SUB", _db_path=dup_db)
+        """When scoped to the pkg_b copy via package=, only CALLER_B appears."""
+        results = get_callers("SHARED_SUB", package="pkg_b", _db_path=dup_db)
         names = {r["name"] for r in results}
         assert "CALLER_A" not in names
 
@@ -159,24 +130,15 @@ class TestGetCalleesCurrentBehaviour:
         names = {r["callee_name"] for r in results}
         assert names == {"CALLEE_ONLY", "UNIQUE_CALLEE"}
 
-    @pytest.mark.xfail(reason="Bug: callees cannot be scoped to pkg_a copy; pkg_b callees contaminate the result")
     def test_pkg_a_callees_excludes_unique_callee(self, dup_db):
-        """When scoped to the pkg_a copy, only CALLEE_ONLY should appear.
-
-        Currently get_callees merges rows from caller_id 20 and 21, because
-        both subroutines match upper(s.name) = upper('SHARED_SUB').
-        """
-        results = get_callees("SHARED_SUB", _db_path=dup_db)
+        """When scoped to the pkg_a copy via package=, only CALLEE_ONLY appears."""
+        results = get_callees("SHARED_SUB", package="pkg_a", _db_path=dup_db)
         names = {r["callee_name"] for r in results}
         assert "UNIQUE_CALLEE" not in names
 
-    @pytest.mark.xfail(reason="Bug: callees cannot be scoped to pkg_b copy; pkg_a callees contaminate the result")
     def test_pkg_b_callees_excludes_callee_only(self, dup_db):
-        """When scoped to the pkg_b copy, only UNIQUE_CALLEE should appear.
-
-        Currently both callees are returned regardless of which copy is intended.
-        """
-        results = get_callees("SHARED_SUB", _db_path=dup_db)
+        """When scoped to the pkg_b copy via package=, only UNIQUE_CALLEE appears."""
+        results = get_callees("SHARED_SUB", package="pkg_b", _db_path=dup_db)
         names = {r["callee_name"] for r in results}
         assert "CALLEE_ONLY" not in names
 
