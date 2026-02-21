@@ -64,38 +64,42 @@ similar real-world caveats.
 
 ---
 
-## Experiment documentation
+## Experiment documentation and scripts
 
-The backlog item "experiment README" is a pre-release task. The
-`rotating_convection` experiment has no documentation beyond the namelist
-comments and the gen script docstring. A `experiments/rotating_convection/README.md`
-should cover:
+One experiment README is sufficient for v0.1: `experiments/rotating_convection/`.
 
-- Scientific motivation and physical setup
-- Scale analysis summary (key numbers from check_scales)
-- Grid and parameter choices with brief justification
-- Gotchas encountered during setup (RBCS mask, DIAGNOSTICS_SIZE, vertical CFL)
-- How to regenerate, build, and run
+The experiment is already self-contained for build and run — binary input files
+(`bathy.bin`, `init_T.bin`, `rbcs_T.bin`, `rbcs_mask.bin`) are committed
+alongside the namelists. Users clone the repo, build, and run without needing
+to regenerate anything. The gen script is there for transparency and
+modification.
 
-> **USER:**
->
-> (Is one experiment README sufficient for v0.1, or should the tutorial
-> experiment also get one? Any specific sections you'd want included beyond
-> the above?)
+### Files to add or move
 
----
+- **Move** `scripts/gen-rotating-convection.py` →
+  `experiments/rotating_convection/gen.py` (co-locate with what it generates)
+- **Add** `experiments/rotating_convection/plot.py` — coordinate-fixed
+  cross-section script from the conversation (subtract 0.5 from x/y to centre
+  on tank)
+- **Add** `experiments/rotating_convection/T_section.png` — committed output
+  from a completed run (referenced in README)
+- **Update** `pixi.toml` — `gen-rotating-convection` task path
 
-## Visualisation script
+### README content
 
-The fixed cross-section plotting script (coordinate-corrected version) exists
-only in the conversation. The original in-conversation script had a coordinate
-bug. The fixed version should live somewhere in the repo — either as a
-`scripts/plot-experiment.py` or as a pixi task.
+`experiments/rotating_convection/README.md` should cover:
 
-> **USER:**
->
-> (Should this be a general `plot-experiment.py` that works for any experiment,
-> or a specific `plot-rotating-convection.py`? Should it be a pixi task?)
+- The original user prompt that motivated this experiment (verbatim or
+  paraphrased — captures the scientific intent)
+- Physical setup: rotating convection in a 1 m tank, parameter summary
+- Scale analysis summary (Ro, Ek, Bu, δ from check_scales, key flags raised)
+- Parameter choices with brief rationale (deltaT, grid, RBCS, tempAdvScheme)
+- Gotchas encountered: RBCS mask, DIAGNOSTICS_SIZE, vertical CFL instability
+- How to regenerate input files: `python experiments/rotating_convection/gen.py`
+- How to build and run: `pixi run build-rotating-convection` /
+  `pixi run run-rotating-convection`
+- Cross-section plot: `python experiments/rotating_convection/plot.py`,
+  with embedded `T_section.png`
 
 ---
 
@@ -113,29 +117,22 @@ baked in. See `plans/release-architecture.md`.
 - [ ] Update `.mcp.json` — `docker run --rm -i ghcr.io/willirath/mitgcm-mcp:latest`
 - [ ] Build image locally (`pixi run build-mcp-image`) with populated `data/`
 - [ ] Publish image to GHCR; set package visibility to public
-- [ ] Smoke test: fresh machine, `claude mcp add --transport stdio --scope user mitgcm -- docker run --rm -i ghcr.io/willirath/mitgcm-mcp:latest`, verify tools respond
+- [ ] Smoke test: `claude mcp add --transport stdio --scope user mitgcm -- docker run --rm -i ghcr.io/willirath/mitgcm-mcp:latest`, verify tools respond
 
 ---
 
 ## Backlog triage
 
-Current backlog has 8 items. Proposed disposition for v0.1:
-
 | Item | Disposition |
 |---|---|
 | Gotchas → JSON | Post-v0.1 |
 | Experiment README | **Include** |
-| Forcing file gen as tool | Post-v0.1 — out of scope |
-| Visualisation script | **Include** |
+| Forcing file gen as tool | Post-v0.1 — rotating_convection gen.py is the worked example |
+| Visualisation script | **Include** — in experiment dir |
 | Tool use enforcement | Done — CLAUDE.md updated |
 | CPP guard line attribution | Post-v0.1 — known limitation, documented |
 | GPU Ollama | Post-v0.1 — performance only |
 | INI_PARMS use vs declaration | Post-v0.1 — caveat already in tool docstring |
-
-> **USER:**
->
-> (Any items you'd move from post-v0.1 to included? Anything in the backlog
-> that feels blocking?)
 
 ---
 
@@ -145,8 +142,10 @@ Current backlog has 8 items. Proposed disposition for v0.1:
 - [ ] README.md reflects current state
 - [ ] All docs/ files consistent with implementation
 - [ ] Tool docstrings reviewed
+- [ ] `scripts/gen-rotating-convection.py` moved to `experiments/rotating_convection/gen.py`
+- [ ] `experiments/rotating_convection/plot.py` added
+- [ ] `experiments/rotating_convection/T_section.png` committed
 - [ ] `experiments/rotating_convection/README.md` written
-- [ ] Visualisation script committed
 - [ ] `docker/mitgcm/Dockerfile` (moved from root)
 - [ ] `docker/mcp/Dockerfile` + `entrypoint.sh` + `.dockerignore`
 - [ ] `compose.yml` updated (named network, dev-only)
