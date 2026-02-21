@@ -51,7 +51,7 @@ Reorganise the Docker setup and produce the self-contained MCP image.
 - [x] Update `.mcp.json` — `docker run --rm -i ghcr.io/willirath/mitgcm-mcp:v2026.02.1`
 - [x] Pin all base images to sha256 digests
 - [x] Switch `docker/mitgcm/Dockerfile` to `debian:bookworm-slim` + MPICH
-- [ ] Rebuild `mitgcm:latest` and `mitgcm-mcp:latest` after Debian+MPICH+pinning changes
+- [x] Rebuild `mitgcm:latest` and `mitgcm-mcp:latest` after Debian+MPICH+pinning changes
 
 **Done when:** `pixi run build-mcp-image` succeeds with populated `data/`;
 `docker run --rm -i mitgcm-mcp:latest` starts without error.
