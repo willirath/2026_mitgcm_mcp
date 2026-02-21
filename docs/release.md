@@ -20,16 +20,19 @@ reset each month. Examples: `v2026.02.1`, `v2026.02.2`.
 
 ---
 
-## 1. Build the MCP image
+## 1. Build and push the MCP image (multi-arch)
+
+Build for both `linux/amd64` and `linux/arm64` and push directly to GHCR
+in one step (multi-arch manifests cannot be loaded into the local daemon):
 
 ```bash
-pixi run build-mcp-image
-```
-
-This runs:
-
-```
-docker build --platform linux/amd64 -t mitgcm-mcp:latest -f docker/mcp/Dockerfile .
+VERSION=v2026.02.1
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  -t ghcr.io/willirath/mitgcm-mcp:${VERSION} \
+  -t ghcr.io/willirath/mitgcm-mcp:latest \
+  -f docker/mcp/Dockerfile \
+  --push .
 ```
 
 The build bakes in:
@@ -38,43 +41,12 @@ The build bakes in:
 - Python 3.13 runtime + dependencies
 - Pre-built indices from `data/` (DuckDB ~33 MB + ChromaDB ~145 MB)
 
-Final image size: ~515 MB. Build time: ~5 min on first run (model download),
-~1 min on subsequent runs (cached layers).
+Build time: ~8 min on first run (model download), ~2 min on subsequent runs.
 
-### Multi-arch (arm64 + amd64)
-
-Single-arch (`linux/amd64`) builds run locally. Multi-arch requires
-`docker buildx` with a builder that supports both platforms:
+For local development only (single-arch, not pushed):
 
 ```bash
-docker buildx build \
-  --platform linux/amd64,linux/arm64 \
-  -t ghcr.io/willirath/mitgcm-mcp:v2026.02.1 \
-  -f docker/mcp/Dockerfile \
-  --push .
-```
-
-This is the intended R4 path; use GitHub Actions (see below) to avoid
-local QEMU GPG issues.
-
----
-
-## 2. Tag the image
-
-```bash
-VERSION=v2026.02.1
-docker tag mitgcm-mcp:latest ghcr.io/willirath/mitgcm-mcp:${VERSION}
-docker tag mitgcm-mcp:latest ghcr.io/willirath/mitgcm-mcp:latest
-```
-
----
-
-## 3. Push to GHCR
-
-```bash
-VERSION=v2026.02.1
-docker push ghcr.io/willirath/mitgcm-mcp:${VERSION}
-docker push ghcr.io/willirath/mitgcm-mcp:latest
+pixi run build-mcp-image
 ```
 
 ### Set package visibility to public
@@ -87,7 +59,7 @@ stays public across re-pushes.
 
 ---
 
-## 4. Package the experiment archive
+## 2. Package the experiment archive
 
 ```bash
 pixi run package-rotating-convection
@@ -122,7 +94,7 @@ tar -czf rotating_convection.tar.gz \
 
 ---
 
-## 5. Create the GitHub release
+## 3. Create the GitHub release
 
 ```bash
 VERSION=v2026.02.1
@@ -148,7 +120,7 @@ MITgcm source: submodule pinned at \`decd05a\` (checkpoint69k)." \
 
 ---
 
-## 6. Smoke test
+## 4. Smoke test
 
 On a clean machine (or after removing the local image):
 
@@ -174,7 +146,7 @@ Expected: `namelist_to_code_tool` returns a result referencing `cg3dMaxIters`.
 
 ---
 
-## 7. Git tag
+## 5. Git tag
 
 ```bash
 VERSION=v2026.02.1
