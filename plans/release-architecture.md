@@ -18,13 +18,16 @@ MITgcm use the separate `docker/mitgcm/` image.
 
 ## User install experience
 
-```
-# Add to .mcp.json — that's it
-{"command": "docker", "args": ["run", "--rm", "-i", "ghcr.io/willirath/mitgcm-mcp:latest"]}
+```bash
+claude mcp add --transport stdio --scope user mitgcm -- \
+  docker run --rm -i ghcr.io/willirath/mitgcm-mcp:latest
 ```
 
 No Ollama installation, no model pull, no compose setup, no Python environment.
-One Docker pull, one config line.
+One command. Docker pulls the image on first use.
+
+The GHCR package must be set to public (GitHub → Packages → mitgcm-mcp →
+Change visibility) before this works without authentication.
 
 ## Image design
 
