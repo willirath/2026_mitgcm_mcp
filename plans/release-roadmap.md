@@ -70,9 +70,9 @@ Tag, publish, and verify.
 - [x] Push MCP image to GHCR (`v2026.02.1` + `latest`)
 - [x] Set GHCR package visibility to public
 - [x] Package `rotating_convection.tar.gz` (`pixi run package-rotating-convection`)
-- [ ] Create GitHub release `v2026.02.1` with tar.gz asset and image install note
-- [ ] Smoke test on clean machine: install via `claude mcp add`/`codex mcp add`, verify tool responses
-- [ ] Git tag `v2026.02.1` and push
+- [x] Create GitHub release `v2026.02.1` with tar.gz asset and image install note
+- [x] Smoke test on clean machine: install via `claude mcp add`, verify tool responses
+- [x] Git tag `v2026.02.1` and push
 
 **Done when:** A user on a clean machine can install the MCP server with one
 command and get responses from all tools.
