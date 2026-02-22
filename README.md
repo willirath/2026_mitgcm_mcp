@@ -53,8 +53,14 @@ flowchart TB
     Q["User query"] --> C["Claude"]
     C -->|"tool calls · stdio · Docker"| S["MCP server"]
     S --> CG["Code graph<br/>(DuckDB)"]
-    S --> SI["Semantic index<br/>(ChromaDB + Ollama)"]
-    S --> DK["Domain knowledge<br/>(scales · gotchas · configs)"]
+    S --> SC["Code search<br/>(ChromaDB + Ollama)"]
+    S --> SD["Docs search<br/>(ChromaDB + Ollama)"]
+    S --> DK["Domain knowledge<br/>(pure Python)"]
+    CG --> DB[("index.duckdb")]
+    SC --> CB[("chroma/subroutines")]
+    SD --> CD[("chroma/mitgcm_docs")]
+    SC --> OL["Ollama<br/>nomic-embed-text"]
+    SD --> OL
 ```
 
 ## Docs
