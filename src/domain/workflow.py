@@ -7,7 +7,7 @@ of a session without relying on implicit knowledge of the tool set.
 _WORKFLOWS: dict = {
     "design_experiment": {
         "description": (
-            "Design a new rotating-tank MITgcm experiment from physical parameters."
+            "Design a new MITgcm experiment from physical parameters."
         ),
         "steps": [
             {

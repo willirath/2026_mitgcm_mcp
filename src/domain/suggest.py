@@ -1,4 +1,4 @@
-"""Skeleton experiment configurations for known rotating-tank MITgcm setups.
+"""Skeleton experiment configurations for known MITgcm setups.
 
 Returns a structured dict with CPP options, namelist stanzas, and notes for
 two canonical experiment types:
