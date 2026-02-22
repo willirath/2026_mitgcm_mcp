@@ -17,6 +17,32 @@ claude mcp add --transport stdio --scope user mitgcm -- \
 Docker pulls the image on first use (~600 MB — includes Ollama, the embedding
 model, and pre-built indices).
 
+## Example
+
+```
+User: How does MITgcm handle MPI processes?
+
+Claude: MPI topology is set up at boot time. Let me trace
+        the initialization path.
+
+→ search_docs_tool("MPI parallel processing decomposition")
+  ["Machine model parallelism", "Tiles",
+   "Specifying a domain decomposition", ...]
+
+→ find_subroutines_tool("INI_PROCS")
+  [{"name": "INI_PROCS", "file": "eesupp/src/ini_procs.F", ...}]
+
+→ get_source_tool("EEBOOT_MINIMAL", limit=80)
+  [MPI_Init → MPI_Cart_create with nPx × nPy topology ...]
+
+→ get_source_tool("INI_PROCS", limit=100)
+  [MPI_Cart_coords per rank, MPI_Cart_rank for neighbour discovery ...]
+
+Claude: The decomposition is entirely compile-time: SIZE.h sets nPx,
+        nPy, nSx, nSy. The number of MPI ranks launched must equal
+        nPx × nPy — there is no runtime check until the model aborts.
+```
+
 ## What it does
 
 Sixteen tools across four layers. Call `get_workflow_tool` at the start of a
@@ -58,32 +84,6 @@ session to get a recommended tool sequence for your task.
 |---|---|
 | `get_workflow_tool` | Recommended tool sequence for a task (`design_experiment`, `debug_configuration`, `understand_package`, `explore_code`) |
 
-## Example
-
-```
-User: How does MITgcm handle MPI processes?
-
-Claude: MPI topology is set up at boot time. Let me trace
-        the initialization path.
-
-→ search_docs_tool("MPI parallel processing decomposition")
-  ["Machine model parallelism", "Tiles",
-   "Specifying a domain decomposition", ...]
-
-→ find_subroutines_tool("INI_PROCS")
-  [{"name": "INI_PROCS", "file": "eesupp/src/ini_procs.F", ...}]
-
-→ get_source_tool("EEBOOT_MINIMAL", limit=80)
-  [MPI_Init → MPI_Cart_create with nPx × nPy topology ...]
-
-→ get_source_tool("INI_PROCS", limit=100)
-  [MPI_Cart_coords per rank, MPI_Cart_rank for neighbour discovery ...]
-
-Claude: The decomposition is entirely compile-time: SIZE.h sets nPx,
-        nPy, nSx, nSy. The number of MPI ranks launched must equal
-        nPx × nPy — there is no runtime check until the model aborts.
-```
-
 ## Architecture
 
 ```mermaid
@@ -115,20 +115,6 @@ flowchart TB
 | [`docs/docs-index.md`](docs/docs-index.md) | RST documentation index |
 | [`docs/parsing.md`](docs/parsing.md) | Fortran extraction approach |
 | [`docs/diagrams.md`](docs/diagrams.md) | Pipeline and query-time flow diagrams |
-
-## Milestones
-
-| Milestone | What | Status |
-|---|---|---|
-| M0 | Environment, MITgcm submodule, embeddings server | ✓ |
-| M1 | DuckDB code graph (2433 subroutines indexed) | ✓ |
-| M2 | ChromaDB subroutine index | ✓ |
-| M3 | Core query tools | ✓ |
-| M4 | MCP server | ✓ |
-| M5 | Domain knowledge layer | ✓ |
-| M6 | MITgcm runtime environment (Docker) | ✓ |
-| M7 | First real experiment (rotating convection) | ✓ |
-| M8 | MITgcm documentation index | ✓ |
 
 ## For developers
 
