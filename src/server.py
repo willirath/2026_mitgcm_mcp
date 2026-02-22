@@ -312,7 +312,8 @@ def suggest_experiment_config_tool(experiment_type: str) -> dict | None:
     -------
     dict or None
         Keys: "experiment_type", "description", "cpp_options" (list of str),
-        "namelists" (dict of file -> group -> param -> value), "notes" (list of str).
+        "namelists" (dict of file -> group -> param -> value), "notes" (list of str),
+        "quickstart" (dict with "directory_structure", "build", "run", "notes").
         Returns None if the experiment type is not recognised.
     """
     return suggest_experiment_config(experiment_type)

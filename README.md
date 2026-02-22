@@ -22,7 +22,7 @@ model, and pre-built indices).
 Sixteen tools across four layers. Call `get_workflow_tool` at the start of a
 session to get a recommended tool sequence for your task.
 
-**Code navigation**
+### Code navigation
 
 | Tool | What it does |
 |---|---|
@@ -37,13 +37,13 @@ session to get a recommended tool sequence for your task.
 | `get_cpp_requirements_tool` | CPP flags that guard a subroutine |
 | `get_package_flags_tool` | CPP flags defined by a package |
 
-**Documentation search**
+### Documentation search
 
 | Tool | What it does |
 |---|---|
 | `search_docs_tool` | Semantic search over MITgcm RST documentation |
 
-**Domain knowledge**
+### Domain knowledge
 
 | Tool | What it does |
 |---|---|
@@ -52,7 +52,7 @@ session to get a recommended tool sequence for your task.
 | `lookup_gotcha_tool` | Known configuration traps by keyword |
 | `suggest_experiment_config_tool` | Skeleton config + quickstart recipe for an experiment type |
 
-**Workflow guidance**
+### Workflow guidance
 
 | Tool | What it does |
 |---|---|

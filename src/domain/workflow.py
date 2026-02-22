@@ -159,4 +159,4 @@ def get_workflow(task: str | None = None) -> dict:
     if task is not None:
         key = task.lower().strip().replace(" ", "_")
         return {key: _WORKFLOWS[key]} if key in _WORKFLOWS else {}
-    return _WORKFLOWS
+    return dict(_WORKFLOWS)

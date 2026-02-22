@@ -61,7 +61,7 @@ Never read MITgcm source directly via Bash when a tool exists for the purpose.
 | What compile-time flags does package P expose? | `get_package_flags_tool("P")` |
 | General question about a package or behaviour | `search_code_tool("...")` |
 | Question about configuration, algorithms, or parameters | `search_docs_tool("...")` |
-| What calls / is called by subroutine X? | `get_callers_tool` / `get_callees_tool` |
+| What calls / is called by subroutine X? | `get_callers_tool("X")` / `get_callees_tool("X")` |
 
 Direct reads of `MITgcm/` via Bash (`grep`, `sed`, `cat`) are permitted only
 for content not in the index: header-only `.h` files that define no subroutine,

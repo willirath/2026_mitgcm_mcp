@@ -4,63 +4,6 @@ Known limitations and deferred improvements, in no particular priority order.
 
 ---
 
----
-
-## Tool listing in README
-
-**Where**: `README.md`
-
-**Problem**: The README installs the server but gives little signal about what
-it actually does before the reader commits to the install. A user skimming
-GitHub has no fast way to judge whether the tools match their workflow.
-
-**Fix**: Add a concise table of all MCP tools (name, one-line description,
-example query) to the README, placed before the install section. Keep it in
-sync with docstrings in `src/tools.py` — could be auto-generated at release
-time from the tool registry to avoid drift.
-
----
-
-## README as entry point for a new user
-
-**Where**: `README.md`
-
-**Problem**: The README is written for someone who has already decided to
-install. It does not answer the prior question: "what kind of problems does
-this help with, and would it help *me*?" A domain scientist unfamiliar with
-MCP or LLM tooling may not recognise the value proposition from the current
-text.
-
-**Fix**: Open with a concrete before/after: what question did an agent fail to
-answer without the tools, and what did it produce with them? One worked example
-of a full agent session (lab parameters → namelist → scale check → gotcha
-warning) makes the value tangible. The example already exists in the README;
-it may just need to be surfaced earlier and framed around the user's problem
-rather than the tool's features.
-
----
-
-## Agent entry point: tool discoverability and suggested workflow
-
-**Where**: `src/server.py`, tool docstrings
-
-**Problem**: When an agent first sees the tool list, it gets names and
-docstrings but no suggested workflow or ordering. An agent asked to design a
-rotating-tank experiment may reach for `search_code_tool` (wrong first step)
-rather than `translate_lab_params_tool` → `check_scales_tool` →
-`suggest_experiment_config_tool`. The tools are individually documented but the
-*workflow* is implicit.
-
-**Fix**: Two options, not mutually exclusive:
-- Add a `get_workflow` tool (or `describe_capabilities`) that returns a
-  short natural-language description of the intended usage flow for common
-  tasks ("designing a new experiment", "debugging a configuration", "understanding
-  a package"). Zero implementation cost; high value for cold-start sessions.
-- Strengthen individual docstrings with "call this after X" / "combine with Y"
-  cross-references so the workflow emerges from the tool descriptions alone.
-
----
-
 ## Index verification `.h` files for tool-driven discovery
 
 **Where**: `src/docs_indexer/pipeline.py`, `src/docs_indexer/parse.py`
@@ -87,37 +30,6 @@ This is the right pattern for the project's scope: the tools help agents
 *explore MITgcm resources*, and verification headers are a primary resource.
 Generating `SIZE.h` from a tool would narrow creative space; surfacing real
 examples lets the agent adapt them.
-
----
-
-## Quickstart in suggest_experiment_config_tool: Docker recipe without a fixed template
-
-**Where**: `src/domain/suggest.py`, `docker/mitgcm/Dockerfile`
-
-**Problem**: Two related issues:
-
-1. The `suggest_experiment_config_tool` output currently has no "how to build
-   and run" section. An agent that produces correct namelists and CPP options
-   still cannot complete the task without knowing the build recipe.
-2. Any recipe that references `rotating_convection.tar.gz` or another
-   concrete template anchors the agent to that setup, narrowing creative space.
-
-**Fix — two parts**:
-
-*Part A (Dockerfile)*: Bake a pinned MITgcm source checkout into
-`docker/mitgcm/Dockerfile` (shallow clone + `rm -rf .git`). The image grows
-~300–400 MB but users no longer need `git clone MITgcm`. The pinned checkout
-also ensures reproducibility: the experiment was designed against the same
-source that will compile it.
-
-*Part B (tool output)*: Add a `quickstart` key to the dict returned by
-`suggest_experiment_config_tool`. Content should describe the *generic
-directory contract* — `code/` files come from the tool, `input/` files come
-from `translate_lab_params_tool`, binary fields come from agent-written Python
-— followed by the two Docker commands (build, run). No reference to any
-specific experiment or tarball. An agent reading this understands the
-file-layout contract and the exact Docker invocation without being steered
-toward any particular physical setup.
 
 ---
 
@@ -194,27 +106,6 @@ diagnostic plot for a completed experiment.
 **Fix**: A `plot_experiment.py` script (or pixi task) that reads MNC output
 and produces a standard set of plots: surface map, radius–depth cross-section,
 time series of domain-mean temperature. Output goes to `experiments/<name>/fig/`.
-
----
-
-## Tool use vs. direct file reads
-
-**Where**: System prompt / CLAUDE.md
-
-**Problem**: Claude sometimes reads MITgcm source directly via Bash (`sed`,
-`cat`) rather than through the MCP tools (`get_source_tool`,
-`get_subroutine_tool`). The MCP tools provide structured context and respect
-the indexed representation; direct reads bypass them and can silently mislead.
-
-**Example**:
-```
-Bash(sed -n '80,130p' MITgcm/pkg/rbcs/rbcs_add_tendency.F)
-```
-should be replaced by `get_source_tool("rbcs_add_tendency")`.
-
-**Fix**: Strengthen CLAUDE.md instructions to prohibit direct MITgcm source
-reads when an MCP tool exists for the same purpose. Could also add a hook that
-warns when `MITgcm/` appears in a Bash command.
 
 ---
 

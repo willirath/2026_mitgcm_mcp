@@ -1,7 +1,5 @@
 """Unit tests for src/domain/workflow.py."""
 
-import pytest
-
 from src.domain.workflow import get_workflow
 
 KNOWN_TASKS = [
@@ -65,3 +63,13 @@ def test_case_and_whitespace_normalisation():
     """Task lookup normalises case and spaces."""
     result = get_workflow("Design Experiment")
     assert "design_experiment" in result
+
+
+def test_workflow_tool_names_are_known():
+    """Every tool referenced in a workflow step must be in the MCP tool registry."""
+    from tests.test_server import EXPECTED_TOOLS
+    for task, wf in get_workflow().items():
+        for step in wf["steps"]:
+            assert step["tool"] in EXPECTED_TOOLS, (
+                f"{task}: step tool '{step['tool']}' not in EXPECTED_TOOLS"
+            )

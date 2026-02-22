@@ -114,3 +114,49 @@ def test_quickstart_both_experiment_types():
     for exp in ("rotating_convection", "baroclinic_instability"):
         result = suggest_experiment_config(exp)
         assert "quickstart" in result, f"{exp} missing quickstart"
+
+
+def test_quickstart_notes_is_nonempty_list():
+    """quickstart.notes should be a non-empty list."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert isinstance(qs["notes"], list)
+    assert len(qs["notes"]) > 0
+
+
+def test_quickstart_directory_structure_has_required_keys():
+    """quickstart.directory_structure must include SIZE.h and data.diagnostics."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    ds = qs["directory_structure"]
+    assert "code/SIZE.h" in ds
+    assert "input/data" in ds
+    assert "input/data.diagnostics" in ds
+
+
+def test_quickstart_run_references_docker_image():
+    """quickstart run command should reference the mitgcm docker image."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "ghcr.io/willirath/mitgcm" in qs["run"]
+
+
+def test_quickstart_build_uses_optfile():
+    """quickstart build command must include -optfile (required by genmake2)."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "-optfile" in qs["build"]
+
+
+def test_quickstart_build_uses_rootdir():
+    """quickstart build command must include -rootdir."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "-rootdir" in qs["build"]
+
+
+def test_quickstart_run_allow_run_as_root():
+    """quickstart run command must include --allow-run-as-root for Docker."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "--allow-run-as-root" in qs["run"]
+
+
+def test_quickstart_run_symlinks_input():
+    """quickstart run command should symlink input files into the run directory."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "input/*" in qs["run"]
