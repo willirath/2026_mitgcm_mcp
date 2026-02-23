@@ -20,10 +20,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Bake MITgcm source at the exact commit used to build the MCP indices
-# (checkpoint69k + 11 commits = decd05a). depth=12 reaches the commit
-# via a shallow clone from the checkpoint69k tag; .git is stripped so
-# it does not bloat the image layer.
-RUN git clone --depth=12 --branch checkpoint69k \
+# (decd05a = checkpoint69k + 11 commits on main). Clone the default branch
+# without --branch so the shallow clone includes commits newer than the tag;
+# .git is stripped to avoid bloating the image layer.
+RUN git clone --depth=50 --single-branch \
       https://github.com/MITgcm/MITgcm.git /MITgcm \
     && git -C /MITgcm checkout decd05a68a16c9a10b05da054f140886b217a441 \
     && rm -rf /MITgcm/.git
