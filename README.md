@@ -11,7 +11,7 @@ Requires [Claude Code](https://claude.ai/code) and Docker.
 
 ```bash
 claude mcp add --transport stdio --scope user mitgcm -- \
-  docker run --rm -i ghcr.io/willirath/mitgcm-mcp:v2026.02.2
+  docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.3
 ```
 
 Docker pulls the image on first use (~600 MB — includes Ollama, the embedding

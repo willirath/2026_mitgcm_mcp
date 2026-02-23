@@ -6,14 +6,46 @@ two canonical experiment types:
 - baroclinic_instability : Eady-like setup with stratified initial conditions
 """
 
+_RUNTIME_IMAGE = "ghcr.io/willirath/2026-mitgcm-mcp:runtime-latest"
+
+# Dockerfile template — COPYs experiment files in, compiles MITgcm, sets CMD
+# for a single docker run that writes output to /experiment/run (mountable).
+_DOCKERFILE_TEMPLATE = (
+    f"FROM {_RUNTIME_IMAGE}\n"
+    "COPY code/ /experiment/code/\n"
+    "COPY input/ /experiment/input/\n"
+    "RUN MULTIARCH=$(dpkg-architecture -qDEB_HOST_MULTIARCH) && \\\n"
+    "    case $(dpkg-architecture -qDEB_HOST_ARCH) in \\\n"
+    "      amd64) OPTFILE=linux_amd64_gfortran ;; \\\n"
+    "      arm64) OPTFILE=linux_arm64_gfortran ;; \\\n"
+    "    esac && \\\n"
+    "    mkdir -p /experiment/build && cd /experiment/build && \\\n"
+    "    MPI=true MPI_HOME=/usr/lib/$MULTIARCH/mpich \\\n"
+    "      /MITgcm/tools/genmake2 \\\n"
+    "        -rootdir /MITgcm -mods /experiment/code \\\n"
+    "        -optfile /MITgcm/tools/build_options/$OPTFILE -mpi && \\\n"
+    "    make depend && make -j$(nproc)\n"
+    "ENV NP=1\n"
+    "WORKDIR /experiment/run\n"
+    "CMD mkdir -p /experiment/run && \\\n"
+    "    ln -sf /experiment/build/mitgcmuv . && \\\n"
+    "    ln -sf /experiment/input/* . && \\\n"
+    "    mpirun --allow-run-as-root -np $NP ./mitgcmuv\n"
+)
+
 # Shared quickstart recipe — identical for all experiment types.
-# Build and run commands match scripts/build-experiment.sh and
-# scripts/run-experiment.sh exactly.
+# Strategy: one self-contained directory with a Dockerfile that bakes in
+# the compiled binary and input files. Build once, run with a single volume
+# mount for output. No cascading docker run calls.
 _QUICKSTART: dict = {
     "directory_structure": {
+        "Dockerfile": (
+            "Copy template from quickstart['dockerfile']. "
+            "Set ENV NP to nPx*nPy from SIZE.h."
+        ),
         "code/CPP_OPTIONS.h": "#define each flag from cpp_options in this response",
         "code/SIZE.h": (
-            "Set sNx, sNy, Nr, nPx=1, nPy=1, nSx=1, nSy=1, OLx=2, OLy=2. "
+            "Set sNx, sNy, Nr, nPx, nPy, nSx=1, nSy=1, OLx=2, OLy=2. "
             "Constraint: sNx*nSx*nPx == Nx, sNy*nSy*nPy == Ny. "
             "Use search_docs_tool('SIZE.h') to find a working example."
         ),
@@ -29,48 +61,24 @@ _QUICKSTART: dict = {
             "Required when diagnostics package is active. "
             "Use search_docs_tool('data.diagnostics') for an example."
         ),
-        "input/<fields>": (
-            "Input fields (binary .bin or NetCDF) — write a Python script "
-            "to generate from your physical parameters."
+        "input/<fields>": "Input fields (.bin or NetCDF) — written by gen_input.py.",
+        "gen_input.py": (
+            "Python script that writes binary or NetCDF input fields to input/. "
+            "Run before docker build so fields are COPY'd into the image."
         ),
     },
-    "build": (
-        "docker run --rm \\\n"
-        "  --user \"$(id -u):$(id -g)\" \\\n"
-        "  -v $(pwd)/my_experiment:/exp \\\n"
-        "  ghcr.io/willirath/mitgcm:latest \\\n"
-        "  bash -c \"\n"
-        "    MULTIARCH=\\$(dpkg-architecture -qDEB_HOST_MULTIARCH)\n"
-        "    case \\$(dpkg-architecture -qDEB_HOST_ARCH) in\n"
-        "      amd64) OPTFILE=linux_amd64_gfortran ;;\n"
-        "      arm64) OPTFILE=linux_arm64_gfortran ;;\n"
-        "      *)     echo 'Unsupported arch'; exit 1 ;;\n"
-        "    esac\n"
-        "    mkdir -p /exp/build && cd /exp/build &&\n"
-        "    MPI=true MPI_HOME=/usr/lib/\\$MULTIARCH/mpich\n"
-        "      /MITgcm/tools/genmake2 \\\n"
-        "        -rootdir /MITgcm \\\n"
-        "        -mods /exp/code \\\n"
-        "        -optfile /MITgcm/tools/build_options/\\$OPTFILE \\\n"
-        "        -mpi &&\n"
-        "    make depend && make -j\\$(nproc)\""
-    ),
+    "dockerfile": _DOCKERFILE_TEMPLATE,
+    "build": "docker build -t my_experiment .",
     "run": (
-        "docker run --rm \\\n"
-        "  --user \"$(id -u):$(id -g)\" \\\n"
-        "  -v $(pwd)/my_experiment:/exp \\\n"
-        "  ghcr.io/willirath/mitgcm:latest \\\n"
-        "  bash -c \"\n"
-        "    mkdir -p /exp/run && cd /exp/run &&\n"
-        "    ln -sf /exp/build/mitgcmuv . &&\n"
-        "    ln -sf /exp/input/* . &&\n"
-        "    mpirun --allow-run-as-root -np N ./mitgcmuv\""
+        "mkdir -p output && "
+        "docker run --rm -e NP=1 -v \"$(pwd)/output:/experiment/run\" my_experiment"
     ),
     "notes": [
-        "Replace N in mpirun with nPx*nPy from SIZE.h.",
-        "The ghcr.io/willirath/mitgcm image includes MITgcm source — no git clone needed.",
-        "Input fields (.bin or NetCDF) must be generated separately — write a Python script; these tools do not produce them.",
-        "Output is written to my_experiment/run/; remove or rename between runs.",
+        f"Runtime image {_RUNTIME_IMAGE} includes MITgcm source at /MITgcm.",
+        "Generate input fields before docker build: python gen_input.py",
+        "Set NP to nPx*nPy from SIZE.h (ENV NP in Dockerfile or -e NP=... at run time).",
+        "Output lands in output/ on the host after docker run.",
+        "To change namelists: edit input/, re-run gen_input.py if needed, rebuild, re-run.",
     ],
 }
 
@@ -196,7 +204,8 @@ def suggest_experiment_config(experiment_type: str) -> dict | None:
         - "cpp_options"     : list of str (CPP flags to #define in CPP_OPTIONS.h)
         - "namelists"       : dict of namelist-file -> dict of group -> dict of param -> value
         - "notes"           : list of str (setup and verification reminders)
-        - "quickstart"      : dict with keys "directory_structure", "build", "run", "notes"
+        - "quickstart"      : dict with keys "directory_structure", "dockerfile",
+                              "build", "run", "notes"
         Returns None if the experiment type is not recognised.
     """
     key = experiment_type.lower().strip()

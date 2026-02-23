@@ -96,6 +96,12 @@ def test_quickstart_has_build_and_run():
     assert "run" in qs
 
 
+def test_quickstart_has_dockerfile():
+    """quickstart should include a dockerfile key with the Dockerfile template."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "dockerfile" in qs
+
+
 def test_quickstart_has_directory_structure():
     """quickstart should have a directory_structure dict."""
     qs = suggest_experiment_config("rotating_convection")["quickstart"]
@@ -104,9 +110,9 @@ def test_quickstart_has_directory_structure():
 
 
 def test_quickstart_build_references_docker_image():
-    """quickstart build command should reference the mitgcm docker image."""
+    """quickstart dockerfile should reference the runtime GHCR image."""
     qs = suggest_experiment_config("rotating_convection")["quickstart"]
-    assert "ghcr.io/willirath/mitgcm" in qs["build"]
+    assert "ghcr.io/willirath/2026-mitgcm-mcp" in qs["dockerfile"]
 
 
 def test_quickstart_both_experiment_types():
@@ -124,7 +130,7 @@ def test_quickstart_notes_is_nonempty_list():
 
 
 def test_quickstart_directory_structure_has_required_keys():
-    """quickstart.directory_structure must include SIZE.h and data.diagnostics."""
+    """quickstart.directory_structure must include SIZE.h, input/data, data.diagnostics."""
     qs = suggest_experiment_config("rotating_convection")["quickstart"]
     ds = qs["directory_structure"]
     assert "code/SIZE.h" in ds
@@ -132,31 +138,56 @@ def test_quickstart_directory_structure_has_required_keys():
     assert "input/data.diagnostics" in ds
 
 
-def test_quickstart_run_references_docker_image():
-    """quickstart run command should reference the mitgcm docker image."""
+def test_quickstart_directory_structure_has_dockerfile():
+    """quickstart.directory_structure should include a Dockerfile entry."""
     qs = suggest_experiment_config("rotating_convection")["quickstart"]
-    assert "ghcr.io/willirath/mitgcm" in qs["run"]
+    assert "Dockerfile" in qs["directory_structure"]
+
+
+def test_quickstart_directory_structure_has_gen_input():
+    """quickstart.directory_structure should include a gen_input.py entry."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "gen_input.py" in qs["directory_structure"]
+
+
+def test_quickstart_run_references_docker_image():
+    """quickstart run command should invoke docker run."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "docker run" in qs["run"]
 
 
 def test_quickstart_build_uses_optfile():
-    """quickstart build command must include -optfile (required by genmake2)."""
+    """quickstart dockerfile must include -optfile (required by genmake2)."""
     qs = suggest_experiment_config("rotating_convection")["quickstart"]
-    assert "-optfile" in qs["build"]
+    assert "-optfile" in qs["dockerfile"]
 
 
 def test_quickstart_build_uses_rootdir():
-    """quickstart build command must include -rootdir."""
+    """quickstart dockerfile must include -rootdir."""
     qs = suggest_experiment_config("rotating_convection")["quickstart"]
-    assert "-rootdir" in qs["build"]
+    assert "-rootdir" in qs["dockerfile"]
+
+
+def test_quickstart_build_is_docker_build():
+    """quickstart build command should be docker build (not a complex docker run)."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "docker build" in qs["build"]
 
 
 def test_quickstart_run_allow_run_as_root():
-    """quickstart run command must include --allow-run-as-root for Docker."""
+    """quickstart dockerfile CMD must include --allow-run-as-root for Docker MPI."""
     qs = suggest_experiment_config("rotating_convection")["quickstart"]
-    assert "--allow-run-as-root" in qs["run"]
+    assert "--allow-run-as-root" in qs["dockerfile"]
 
 
 def test_quickstart_run_symlinks_input():
-    """quickstart run command should symlink input files into the run directory."""
+    """quickstart dockerfile should symlink input files into the run directory."""
     qs = suggest_experiment_config("rotating_convection")["quickstart"]
-    assert "input/*" in qs["run"]
+    assert "input/*" in qs["dockerfile"]
+
+
+def test_quickstart_run_mounts_output():
+    """quickstart run command should mount an output directory."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "-v" in qs["run"]
+    assert "output" in qs["run"]
