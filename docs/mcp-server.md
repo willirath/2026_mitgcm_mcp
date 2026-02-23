@@ -6,9 +6,15 @@ up with zero network configuration.
 
 ## Install (users)
 
+**Claude Code:**
 ```bash
 claude mcp add --transport stdio --scope user mitgcm -- \
-  docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.3
+  docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.4
+```
+
+**Codex CLI:**
+```bash
+codex mcp add mitgcm -- docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.4
 ```
 
 ## Development use

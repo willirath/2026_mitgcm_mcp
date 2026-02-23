@@ -6,17 +6,30 @@ Known limitations and deferred improvements, in no particular priority order.
 
 ## Codex CLI support
 
-**Where**: `.mcp.json`, `README.md`, `docs/release.md`
+**Where**: `docker/mcp/entrypoint.sh`, `README.md`, `docs/mcp-server.md`
 
-**Problem**: `codex mcp add mitgcm -- docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.3`
-causes "Transport closed" on every tool call. Claude Code works fine with the
-same image and command. Root cause not yet diagnosed — possibly a difference in
-how Codex CLI handles stdio subprocess lifecycle or connection timeouts.
+**Status**: Fixed in v2026.02.4.
 
-**Fix**: Reproduce the failure, capture Codex stderr, and identify whether the
-issue is in Codex's MCP client, the entrypoint, or an incompatibility in the
-fastmcp stdio transport. Once fixed, add `codex mcp add` install instructions
-back to README and release docs.
+**Root cause**: `ollama serve &` in the entrypoint inherited the container's
+stdout, which is the MCP stdio pipe. Any bytes Ollama wrote to stdout before
+Python took over corrupted the JSON-RPC framing. Codex CLI is stricter than
+Claude Code about non-JSON on the pipe. Fix is one line:
+
+```bash
+ollama serve >/dev/null 2>&1 &
+```
+
+Cold-start latency is 0.73 s — well under Codex's 10-second default timeout,
+so no `startup_timeout_sec` tuning is needed.
+
+**Install** (once merged and pushed as `mcp-v2026.02.4`):
+
+```bash
+codex mcp add mitgcm -- docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.4
+```
+
+**Remaining**: add `codex mcp add` install line to README and `docs/mcp-server.md`
+after the merge.
 
 ---
 

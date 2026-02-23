@@ -7,11 +7,17 @@ the indexed source and docs.
 
 ## Install
 
-Requires [Claude Code](https://claude.ai/code) and Docker.
+Requires Docker and Claude Code or Codex CLI.
 
+**Claude Code:**
 ```bash
 claude mcp add --transport stdio --scope user mitgcm -- \
-  docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.3
+  docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.4
+```
+
+**Codex CLI:**
+```bash
+codex mcp add mitgcm -- docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.4
 ```
 
 Docker pulls the image on first use (~600 MB — includes Ollama, the embedding
