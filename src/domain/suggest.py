@@ -8,29 +8,56 @@ two canonical experiment types:
 
 _RUNTIME_IMAGE = "ghcr.io/willirath/2026-mitgcm-mcp:runtime-latest"
 
-# Dockerfile template — COPYs experiment files in, compiles MITgcm, sets CMD
-# for a single docker run that writes output to /experiment/run (mountable).
-_DOCKERFILE_TEMPLATE = (
+# Two explicit Dockerfiles — one per target platform.
+# Do not use a runtime uname/dpkg switch: cross-build contexts require the
+# platform to be fixed at image build time.
+#
+# ARM64 note: newer gfortran requires -fallow-argument-mismatch for MITgcm's
+# Fortran 77 MPI bindings (mpif77/mpif.h argument type mismatches). Inject via
+# code/genmake_local:
+#   EXTRA_FFLAGS="$EXTRA_FFLAGS -fallow-argument-mismatch"
+# Include that file in code/ before running docker build.
+_DOCKERFILE_AMD64 = (
     f"FROM {_RUNTIME_IMAGE}\n"
+    "# Platform: linux/amd64  (x86-64 hosts)\n"
     "COPY code/ /experiment/code/\n"
     "COPY input/ /experiment/input/\n"
-    "RUN MULTIARCH=$(dpkg-architecture -qDEB_HOST_MULTIARCH) && \\\n"
-    "    case $(dpkg-architecture -qDEB_HOST_ARCH) in \\\n"
-    "      amd64) OPTFILE=linux_amd64_gfortran ;; \\\n"
-    "      arm64) OPTFILE=linux_arm64_gfortran ;; \\\n"
-    "    esac && \\\n"
-    "    mkdir -p /experiment/build && cd /experiment/build && \\\n"
-    "    MPI=true MPI_HOME=/usr/lib/$MULTIARCH/mpich \\\n"
+    "RUN mkdir -p /experiment/build && cd /experiment/build && \\\n"
+    "    MPI=true MPI_HOME=/usr/lib/x86_64-linux-gnu/mpich \\\n"
     "      /MITgcm/tools/genmake2 \\\n"
     "        -rootdir /MITgcm -mods /experiment/code \\\n"
-    "        -optfile /MITgcm/tools/build_options/$OPTFILE -mpi && \\\n"
+    "        -optfile /MITgcm/tools/build_options/linux_amd64_gfortran -mpi && \\\n"
     "    make depend && make -j$(nproc)\n"
     "ENV NP=1\n"
     "WORKDIR /experiment/run\n"
     "CMD mkdir -p /experiment/run && \\\n"
     "    ln -sf /experiment/build/mitgcmuv . && \\\n"
     "    ln -sf /experiment/input/* . && \\\n"
-    "    mpirun --allow-run-as-root -np $NP ./mitgcmuv\n"
+    "    mpirun -np $NP ./mitgcmuv\n"
+)
+
+_DOCKERFILE_ARM64 = (
+    f"FROM {_RUNTIME_IMAGE}\n"
+    "# Platform: linux/arm64  (Apple Silicon M-series, ARM64 cloud instances)\n"
+    "# Build with: docker build --platform linux/arm64 -t my_experiment .\n"
+    "#\n"
+    "# If compilation fails with 'Type mismatch in argument' errors, add\n"
+    "# code/genmake_local containing:\n"
+    "#   EXTRA_FFLAGS=\"$EXTRA_FFLAGS -fallow-argument-mismatch\"\n"
+    "COPY code/ /experiment/code/\n"
+    "COPY input/ /experiment/input/\n"
+    "RUN mkdir -p /experiment/build && cd /experiment/build && \\\n"
+    "    MPI=true MPI_HOME=/usr/lib/aarch64-linux-gnu/mpich \\\n"
+    "      /MITgcm/tools/genmake2 \\\n"
+    "        -rootdir /MITgcm -mods /experiment/code \\\n"
+    "        -optfile /MITgcm/tools/build_options/linux_arm64_gfortran -mpi && \\\n"
+    "    make depend && make -j$(nproc)\n"
+    "ENV NP=1\n"
+    "WORKDIR /experiment/run\n"
+    "CMD mkdir -p /experiment/run && \\\n"
+    "    ln -sf /experiment/build/mitgcmuv . && \\\n"
+    "    ln -sf /experiment/input/* . && \\\n"
+    "    mpirun -np $NP ./mitgcmuv\n"
 )
 
 # Shared quickstart recipe — identical for all experiment types.
@@ -39,9 +66,13 @@ _DOCKERFILE_TEMPLATE = (
 # mount for output. No cascading docker run calls.
 _QUICKSTART: dict = {
     "directory_structure": {
-        "Dockerfile": (
-            "Copy template from quickstart['dockerfile']. "
+        "Dockerfile.amd64": (
+            "Use on x86-64 hosts. Copy from quickstart['dockerfile_amd64']. "
             "Set ENV NP to nPx*nPy from SIZE.h."
+        ),
+        "Dockerfile.arm64": (
+            "Use on Apple Silicon / ARM64 hosts. Copy from quickstart['dockerfile_arm64']. "
+            "Build with: docker build --platform linux/arm64 -t my_experiment -f Dockerfile.arm64 ."
         ),
         "code/CPP_OPTIONS.h": "#define each flag from cpp_options in this response",
         "code/SIZE.h": (
@@ -50,6 +81,11 @@ _QUICKSTART: dict = {
             "Use search_docs_tool('SIZE.h') to find a working example."
         ),
         "code/packages.conf": "One package name per line (e.g. diagnostics)",
+        "code/genmake_local": (
+            "ARM64 only, if compilation fails with 'Type mismatch in argument' errors: "
+            "add EXTRA_FFLAGS=\"$EXTRA_FFLAGS -fallow-argument-mismatch\" to inject the "
+            "flag that newer gfortran requires for MITgcm's Fortran 77 MPI bindings."
+        ),
         "code/DIAGNOSTICS_SIZE.h": (
             "Required when ALLOW_DIAGNOSTICS is in cpp_options. "
             "Use search_docs_tool('DIAGNOSTICS_SIZE.h') for an example."
@@ -67,8 +103,14 @@ _QUICKSTART: dict = {
             "Run before docker build so fields are COPY'd into the image."
         ),
     },
-    "dockerfile": _DOCKERFILE_TEMPLATE,
-    "build": "docker build -t my_experiment .",
+    "dockerfile_amd64": _DOCKERFILE_AMD64,
+    "dockerfile_arm64": _DOCKERFILE_ARM64,
+    "dockerfile_note": (
+        "Use Dockerfile.amd64 on x86-64 hosts (most cloud VMs, Linux workstations). "
+        "Use Dockerfile.arm64 on Apple Silicon or other ARM64 hosts — pass "
+        "--platform linux/arm64 to docker build."
+    ),
+    "build": "docker build -t my_experiment -f Dockerfile.amd64 .",
     "run": (
         "mkdir -p output && "
         "docker run --rm -e NP=1 -v \"$(pwd)/output:/experiment/run\" my_experiment"

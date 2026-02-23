@@ -66,10 +66,11 @@ def test_case_and_whitespace_normalisation():
 
 
 def test_workflow_tool_names_are_known():
-    """Every tool referenced in a workflow step must be in the MCP tool registry."""
+    """Every non-None tool referenced in a workflow step must be in the MCP tool registry."""
     from tests.test_server import EXPECTED_TOOLS
     for task, wf in get_workflow().items():
         for step in wf["steps"]:
-            assert step["tool"] in EXPECTED_TOOLS, (
-                f"{task}: step tool '{step['tool']}' not in EXPECTED_TOOLS"
-            )
+            if step["tool"] is not None:
+                assert step["tool"] in EXPECTED_TOOLS, (
+                    f"{task}: step tool '{step['tool']}' not in EXPECTED_TOOLS"
+                )

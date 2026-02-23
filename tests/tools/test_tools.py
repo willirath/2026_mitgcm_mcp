@@ -2,6 +2,7 @@
 
 import pytest
 from src.tools import (
+    _normalize_query,
     diagnostics_fill_to_source,
     find_subroutines,
     get_callees,
@@ -11,6 +12,41 @@ from src.tools import (
     get_subroutine,
     namelist_to_code,
 )
+
+
+# ---------------------------------------------------------------------------
+# _normalize_query
+# ---------------------------------------------------------------------------
+
+
+def test_normalize_camel_case():
+    """camelCase identifiers should be split into words."""
+    assert _normalize_query("zonalWindFile") == "zonal Wind File"
+
+
+def test_normalize_snake_case():
+    """snake_case identifiers should have underscores replaced by spaces."""
+    assert _normalize_query("no_slip_sides") == "no slip sides"
+
+
+def test_normalize_mixed_query():
+    """Mixed identifier + natural language should split only the identifier part."""
+    result = _normalize_query("tauX direction convention")
+    assert "tau X" in result
+    assert "direction convention" in result
+
+
+def test_normalize_allcaps_unchanged():
+    """ALL_CAPS identifiers should have underscores replaced but case preserved."""
+    result = _normalize_query("ALLOW_NONHYDROSTATIC")
+    assert "_" not in result
+    assert "ALLOW" in result
+
+
+def test_normalize_plain_text_unchanged():
+    """Plain natural-language queries should not be altered (no camelCase/underscores)."""
+    q = "non hydrostatic pressure solve"
+    assert _normalize_query(q) == q
 
 
 # ---------------------------------------------------------------------------

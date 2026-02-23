@@ -18,6 +18,9 @@ How to build, publish, and verify a new `ghcr.io/willirath/2026-mitgcm-mcp` rele
 CalVer: `vYYYY.MM.MICRO` where MICRO is a sequential counter starting at 1,
 reset each month. Examples: `v2026.02.1`, `v2026.02.2`.
 
+Roadmap files use `vYYYY.MM` (no MICRO): `plans/roadmap-v2026.03.md`.
+The MICRO is assigned when the release is actually cut.
+
 ---
 
 ## 1. Build and push the runtime image (multi-arch)

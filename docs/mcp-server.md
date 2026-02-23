@@ -156,6 +156,21 @@ suggest_experiment_config_tool(experiment_type: str) -> dict | None
 Skeleton MITgcm configuration for `rotating_convection` or
 `baroclinic_instability`. Returns CPP flags, namelist stanzas, and notes.
 
+#### `get_namelist_structure_tool`
+```
+get_namelist_structure_tool() -> dict[str, dict[str, str]]
+```
+Full map of MITgcm namelist files to groups to descriptions:
+`{ file: { group: description } }`. Use this to orient yourself when you
+know the domain (e.g. 'open boundary conditions', 'EOS parameters') but
+not yet which file/group to edit. Returns all ~100 groups known to the
+DuckDB index plus explicit entries for core and non-obvious groups
+(e.g. `GM_PARM01 → data.gmredi`, `EXF_NML_01 → data.exf`).
+
+To find which group reads a *specific parameter by name*, use
+`namelist_to_code_tool` instead. To understand a group's parameters in
+depth, follow up with `search_docs_tool(group_name)`.
+
 ### Workflow guidance
 
 #### `get_workflow_tool`
@@ -167,6 +182,35 @@ session to orient the agent. `task` is one of `design_experiment`,
 `debug_configuration`, `understand_package`, `explore_code`. Pass `None` (or
 omit) to get all workflows. Each workflow has `description`, `steps` (ordered
 list of `{tool, purpose}`), and `notes`.
+
+## Working with namelists
+
+MITgcm namelists are standard Fortran namelists. The Python package
+[`f90nml`](https://f90nml.readthedocs.io/) is available in the project
+environment (`pixi run python -c "import f90nml"`) and is useful for two
+tasks that are not covered by MCP tools:
+
+**Validation** — parse a namelist stanza to catch syntax errors before
+writing to disk:
+```python
+import f90nml
+nml = f90nml.reads("&PARM01\n nonHydrostatic=.TRUE.,\n f0=1e-4,\n /")
+# raises ValueError on malformed input (missing terminator, etc.)
+```
+
+**Formatting** — produce clean, consistently indented output from a dict:
+```python
+import f90nml, io
+nml = f90nml.reads("&PARM01\n nonHydrostatic=.TRUE.,\n f0=1e-4,\n /")
+buf = io.StringIO()
+f90nml.write(nml, buf)
+print(buf.getvalue())
+```
+
+Caveats: `f90nml` lowercases all group and parameter names on output
+(MITgcm reads case-insensitively, so this is fine). `N*value` array
+shorthand (`tRef=29*20.0`) is expanded to an explicit list on parse and
+not re-compressed on write.
 
 ## Example session
 

@@ -33,8 +33,16 @@ data/                generated artifacts (gitignored)
 ## Planning and roadmap
 
 - Plans go in `plans/` as markdown — do not use Claude Code's built-in plan mode
-- Roadmap in `plans/roadmap.md` — tick off checklist items when done, include a "done when" criterion per milestone
+- Per-milestone roadmaps in `plans/roadmap-vYYYY.MM.md` (e.g. `plans/roadmap-v2026.03.md`)
+- Tick off checklist items when done; include a "done when" criterion per milestone
 - Each milestone checklist includes a docs item
+
+## Versioning
+
+- CalVer: `vYYYY.MM.MICRO` where MICRO is a sequential counter starting at 1, reset each month
+- Examples: `v2026.02.1`, `v2026.02.2`, `v2026.03.1`
+- Roadmap files use `vYYYY.MM` (no MICRO — determined at release time)
+- Full release process in `docs/release.md`
 
 ## Commits
 

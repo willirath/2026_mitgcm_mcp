@@ -8,17 +8,45 @@ that natural-language queries can retrieve relevant code.
 
 ## Infrastructure
 
-ollama runs as a Docker container (see `compose.yml`). This avoids the
-conda-forge CPU-only binary, which crashes on Apple Silicon due to a missing
-Metal-capable runner.
+Two modes are supported. Both listen on `localhost:11434`; the `ollama`
+Python client connects there by default with no configuration needed.
+
+### Docker (MCP server query time)
 
 ```sh
 docker compose up -d                                      # start server
 docker compose exec ollama ollama pull nomic-embed-text  # first-time setup
 ```
 
-The server listens on `localhost:11434`. The `ollama` Python client connects
-there by default — no configuration needed.
+The Docker container runs CPU-only — Docker Desktop on macOS has no Metal
+passthrough. This is acceptable for the MCP server, which embeds only one
+query string per tool call. It is too slow (~7 min/100 chunks) for indexing runs.
+
+### Native binary (indexing)
+
+The native Ollama binary uses Metal and is ~26× faster on Apple Silicon.
+Install once from the GitHub releases page (no package manager needed):
+
+```sh
+mkdir -p ~/.local/lib/ollama ~/.local/bin
+# download ollama-darwin.tgz from github.com/ollama/ollama/releases
+tar -xzf ollama-darwin.tgz -C ~/.local/lib/ollama/
+chmod +x ~/.local/lib/ollama/ollama
+ln -sf ~/.local/lib/ollama/ollama ~/.local/bin/ollama
+```
+
+Run before embedding, pointing at the shared model store:
+
+```sh
+# Stop Docker Ollama first to free port 11434
+docker compose down
+
+OLLAMA_MODELS="$(pwd)/ollama_data/models" ~/.local/bin/ollama serve &
+pixi run embed              # or embed-docs, embed-verification
+```
+
+The `ollama_data/` directory is shared between Docker and native Ollama,
+so `ollama pull` only ever needs to run once.
 
 ## Usage
 
@@ -31,7 +59,8 @@ def embed(text: str) -> list[float]:
 
 ## Notes
 
-- The Docker container persists the model in a named volume (`ollama_data`),
-  so `ollama pull` only needs to run once.
 - The server must be running before any embedding calls. Callers should treat
   connection errors as infrastructure failures, not application errors.
+- The native binary ships with Metal shaders (`mlx.metallib`, `libmlx.dylib`)
+  that must stay alongside the `ollama` executable — do not symlink the binary
+  alone without the dylibs.

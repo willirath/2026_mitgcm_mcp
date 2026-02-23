@@ -2,9 +2,34 @@
 
 ## Overview
 
-The ChromaDB index stores vector embeddings of MITgcm subroutines and supports
-natural-language search over the codebase. It lives at `data/chroma/` (gitignored)
-and is built from the DuckDB code graph by `src/embedder/`.
+The ChromaDB index stores vector embeddings for semantic search over MITgcm
+source and documentation. It lives at `data/chroma/` (gitignored).
+
+Three collections are maintained, each built by a separate pipeline:
+
+| Collection | Pipeline | Content |
+|---|---|---|
+| `subroutines` | `pixi run embed` | `.F` / `.F90` subroutine source |
+| `mitgcm_docs` | `pixi run embed-docs` | RST documentation + `.h` header files |
+| `mitgcm_verification` | `pixi run embed-verification` | Verification experiment namelists and code |
+
+All three share the same `data/chroma/` path and embedding model
+(`nomic-embed-text` via Ollama).
+
+## File type coverage
+
+| File type | Location | Count | Indexed in | Notes |
+|---|---|---|---|---|
+| `.F` | `model/src/`, `pkg/*/` | ~2100 | `subroutines` | Full coverage |
+| `.F90` | various | ~37 | `subroutines` | Full coverage |
+| `.h` (experiment) | `verification/*/code/` | ~500 | `mitgcm_docs` | Experiment-level overrides |
+| `.h` (model/inc) | `model/inc/` | 46 | `mitgcm_docs` | PARAMS.h, DYNVARS.h, GRID.h, … |
+| `.h` (eesupp/inc) | `eesupp/inc/` | 16 | `mitgcm_docs` | EXCH.h, EEPARAMS.h, … |
+| `.rst` | `doc/` | ~85 | `mitgcm_docs` | Full RST documentation |
+| namelist (`data*`) | `verification/*/input/` | — | `mitgcm_verification` | Per-experiment physics config |
+| `packages.conf` | `verification/*/code/` | — | `mitgcm_verification` | Package selection |
+| `.py`, `.m`, `.c` | various | many | — | Build/analysis tools; not indexed |
+| `.bin`, `.nc`, `.data` | various | many | — | Binary data; not indexed |
 
 ## Modules
 
@@ -49,11 +74,11 @@ Each batch embed is wrapped in a two-level fallback:
    it is skipped with a warning and excluded from the upsert. All retries,
    fallbacks, and skips are logged to stdout.
 
-Known skipped chunk: `diffusivity_free` (chunk 0, `atm_phys`) — 4039 chars of
-dense free-form F90 array code that tokenizes past the CPU Ollama context
-limit. See `plans/backlog.md` for the GPU path that would fix this.
+Chunks that still exceed the context limit after the first retry are split
+at the midpoint and both halves embedded separately (ids get `_a`/`_b` suffix).
+Halves at ~2000 chars are reliably within the 2048-token window.
 
-Progress is printed every 100 chunks (previously 500).
+Progress is printed every 100 chunks.
 
 ## Chunking
 
@@ -158,4 +183,74 @@ for meta, dist in zip(results["metadatas"][0], results["distances"][0]):
 
 for dist, name, pkg in sorted(seen.values()):
     print(f"{dist:.3f}  {name}  [{pkg}]")
+```
+
+---
+
+## `mitgcm_docs` collection
+
+Built by `src/docs_indexer/` and populated with `pixi run embed-docs`.
+
+### Content
+
+Two sources are merged:
+
+- **RST documentation** (`MITgcm/doc/**/*.rst`): parsed into sections (heading +
+  body), RST markup stripped.
+- **Header files** (`.h`): raw content from three locations:
+  - `MITgcm/verification/*/code/*.h` — experiment-level header overrides
+  - `MITgcm/model/inc/*.h` — core model headers (`PARAMS.h`, `DYNVARS.h`,
+    `GRID.h`, `SIZE.h`, `CPP_OPTIONS.h`, etc.)
+  - `MITgcm/eesupp/inc/*.h` — execution environment headers (`EXCH.h`,
+    `EEPARAMS.h`, `CPP_EEOPTIONS.h`, etc.)
+
+### Metadata schema
+
+| Field | Type | Content |
+|---|---|---|
+| `file` | str | path relative to `MITgcm/` or the doc root |
+| `section` | str | RST heading text, or filename for `.h` files |
+| `chunk_index` | int | 0-based chunk index |
+| `n_chunks` | int | total chunks for this section |
+| `section_id` | str | stable id for join-back (`doc_N` or `hdr_N`) |
+
+### Building
+
+```sh
+docker compose up -d
+pixi run embed-docs
+```
+
+---
+
+## `mitgcm_verification` collection
+
+Built by `src/verification_indexer/` and populated with
+`pixi run embed-verification`.
+
+### Content
+
+All text files under `MITgcm/verification/*/input/` and
+`MITgcm/verification/*/code/`:
+
+- **Namelists**: `input/data`, `input/data.pkg`, `input/data.*`, `input/eedata`
+- **Headers and package config**: `code/*.h`, `code/packages.conf`
+- **Source**: `code/*.F`, `code/*.F90`
+
+Binary and generated files (`.bin`, `.nc`, `.data`, `.meta`, `.gz`) are skipped.
+
+### Metadata schema
+
+| Field | Type | Content |
+|---|---|---|
+| `experiment` | str | experiment directory name |
+| `file` | str | `<experiment>/input/<name>` or `<experiment>/code/<name>` |
+| `filename` | str | bare filename |
+| `chunk_index` | int | 0-based chunk index |
+
+### Building
+
+```sh
+docker compose up -d
+pixi run embed-verification
 ```

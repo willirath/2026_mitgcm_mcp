@@ -154,6 +154,97 @@ CATALOGUE: list[dict] = [
         ),
     },
     {
+        "title": "readBinaryPrec mismatch: Python writes 64-bit, MITgcm reads 32-bit",
+        "keywords": [
+            "readbinaryprec", "binary precision", "float64", "float32",
+            "precision", "numpy dtype", "input field", "wrong results",
+        ],
+        "summary": (
+            "MITgcm defaults to readBinaryPrec=32 (single-precision). Writing input "
+            "fields as float64 (NumPy default) produces silent wrong results."
+        ),
+        "detail": (
+            "MITgcm reads binary input fields at the precision set by readBinaryPrec "
+            "in data &PARM01 (default: 32). NumPy's default dtype is float64 (64-bit). "
+            "If gen_input.py writes fields with numpy.tofile() without setting dtype, "
+            "the bytes are interpreted as 32-bit floats with the wrong bit pattern — "
+            "no error is raised, but density, velocity, and temperature fields will be "
+            "garbage. Fix: explicitly cast before writing: "
+            "array.astype('>f4').tofile('field.bin'). "
+            "Alternatively set readBinaryPrec=64 in data &PARM01 and write float64. "
+            "The same rule applies to writeBinaryPrec for output fields."
+        ),
+    },
+    {
+        "title": "INCLUDE_PHIHYD_CALCULATION_CODE must be defined in CPP_OPTIONS.h",
+        "keywords": [
+            "phihyd", "include_phihyd", "config_check", "configcheck",
+            "hydrostatic pressure", "phihydf", "phihydc",
+        ],
+        "summary": (
+            "INCLUDE_PHIHYD_CALCULATION_CODE must be #defined in CPP_OPTIONS.h. "
+            "Without it MITgcm aborts at startup with a CONFIG_CHECK error."
+        ),
+        "detail": (
+            "MITgcm's CONFIG_CHECK subroutine (called at initialisation) verifies "
+            "that INCLUDE_PHIHYD_CALCULATION_CODE is defined. If CPP_OPTIONS.h does "
+            "not contain '#define INCLUDE_PHIHYD_CALCULATION_CODE', the model aborts "
+            "immediately with a message like 'CONFIGURATION ERROR: "
+            "INCLUDE_PHIHYD_CALCULATION_CODE is required'. "
+            "Add '#define INCLUDE_PHIHYD_CALCULATION_CODE' to code/CPP_OPTIONS.h in "
+            "your experiment directory. This flag enables the hydrostatic pressure "
+            "calculation and is required for virtually all MITgcm experiments."
+        ),
+    },
+    {
+        "title": "packages.conf: gfd group must be listed, not just individual packages",
+        "keywords": [
+            "packages_check", "packages.conf", "mom_fluxform", "gfd", "package group",
+            "packages check", "unknown package",
+        ],
+        "summary": (
+            "packages.conf must include the 'gfd' group line. Listing only individual "
+            "packages like 'mom_fluxform' causes PACKAGES_CHECK to abort."
+        ),
+        "detail": (
+            "MITgcm's PACKAGES_CHECK validates packages.conf against a known set of "
+            "groups and packages. 'gfd' is the group that includes mom_fluxform, "
+            "mom_common, and related dynamics packages. "
+            "If packages.conf lists 'mom_fluxform' without the 'gfd' group, the build "
+            "may fail or PACKAGES_CHECK aborts at runtime. "
+            "Minimal working packages.conf for most experiments:\n"
+            "  gfd\n"
+            "  diagnostics\n"
+            "Add other packages (rbcs, obcs, …) as needed. "
+            "Use search_docs_tool('packages.conf') or a verification experiment as reference."
+        ),
+    },
+    {
+        "title": "SIZE.h must include MAX_OLX / MAX_OLY PARAMETER block",
+        "keywords": [
+            "size.h", "max_olx", "max_oly", "overlap", "exch.h", "eesupp",
+            "compilation error", "undeclared", "sNx", "sNy",
+        ],
+        "summary": (
+            "A custom SIZE.h must declare MAX_OLX and MAX_OLY PARAMETER statements "
+            "in addition to sNx, sNy, Nr, nPx, nPy. Omitting them breaks the EXCH.h "
+            "inclusion chain with an 'undeclared' compilation error."
+        ),
+        "detail": (
+            "MITgcm's eesupp/inc/EXCH.h and related headers use MAX_OLX and MAX_OLY "
+            "to size exchange buffers. A minimal SIZE.h must contain:\n"
+            "      PARAMETER ( sNx = ..., sNy = ..., OLx = 2, OLy = 2,\n"
+            "     &             nSx = 1, nSy = 1, nPx = ..., nPy = ...,\n"
+            "     &             Nx  = sNx*nSx*nPx, Ny  = sNy*nSy*nPy,\n"
+            "     &             Nr  = ... )\n"
+            "      PARAMETER ( MAX_OLX = OLx, MAX_OLY = OLy )\n"
+            "Without MAX_OLX / MAX_OLY the compilation aborts with 'Symbol "
+            "MAX_OLX has not been explicitly declared'. "
+            "Use search_docs_tool('SIZE.h') to find a complete example from a "
+            "verification experiment."
+        ),
+    },
+    {
         "title": "Vertical CFL limit for explicit advection with convective velocities",
         "keywords": [
             "cfl", "vertical cfl", "convection", "instability", "blow up", "nan",
@@ -174,6 +265,31 @@ CATALOGUE: list[dict] = [
             "(2) add tempAdvScheme=33 (&PARM01) to enable the PPM monotone advection "
             "scheme, which is more stable near sharp gradients. Halving deltaT roughly "
             "doubles the required run time; use nTimeSteps accordingly."
+        ),
+    },
+    {
+        "title": "-mpi flag required in genmake2 even for single-process runs",
+        "keywords": [
+            "-mpi", "genmake2", "mpi", "single process", "np=1", "mpirun",
+            "mpi_home", "mpich", "openmpi", "link error",
+        ],
+        "summary": (
+            "genmake2 must be invoked with -mpi even when NP=1. "
+            "Without it the MPI-enabled executable cannot be linked."
+        ),
+        "detail": (
+            "MITgcm's genmake2 configures the build for either serial or MPI execution. "
+            "If the Dockerfile uses 'mpirun -np $NP ./mitgcmuv' at runtime, the binary "
+            "must be compiled with MPI support — add '-mpi' to the genmake2 invocation "
+            "and set MPI_HOME to the MPICH (or OpenMPI) library path. "
+            "Omitting -mpi produces a serial binary; mpirun will then fail at startup "
+            "with a link error or silently run only one process regardless of NP. "
+            "Example for MPICH on amd64:\n"
+            "  MPI=true MPI_HOME=/usr/lib/x86_64-linux-gnu/mpich \\\n"
+            "    /MITgcm/tools/genmake2 -rootdir /MITgcm -mods /experiment/code \\\n"
+            "      -optfile /MITgcm/tools/build_options/linux_amd64_gfortran -mpi\n"
+            "Note: MPICH's hydra launcher does NOT support --allow-run-as-root; "
+            "omit that flag entirely."
         ),
     },
 ]

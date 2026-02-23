@@ -1,5 +1,9 @@
 # Development only — provides Ollama for pixi run embed / embed-docs.
 # Not used by the released MCP image (Ollama runs inside the container).
+#
+# CPU-only on macOS (no Metal passthrough via Docker Desktop).
+# Suitable for MCP server query-time embedding (one call per tool invocation).
+# For indexing runs use native Ollama instead — see docs/embeddings.md.
 services:
   ollama:
     image: ollama/ollama@sha256:0764cf55b4a33bcecca10f718394d097ef7d464b75669a14f0cd4ac1a8b9a0c5

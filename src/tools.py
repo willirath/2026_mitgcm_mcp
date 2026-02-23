@@ -1,9 +1,28 @@
 """Plain Python callables over the DuckDB code graph and ChromaDB semantic index."""
 
+import re
 from pathlib import Path
 
 from src.indexer.schema import DB_PATH, connect
-from src.embedder.store import CHROMA_PATH, get_docs_collection
+from src.embedder.store import CHROMA_PATH, get_docs_collection, get_verification_collection
+
+
+def _normalize_query(query: str) -> str:
+    """Split camelCase and snake_case identifiers into words before embedding.
+
+    Embedding models handle natural language well but treat camelCase compound
+    identifiers as single unknown tokens, producing poor query vectors.
+    Examples:
+        "zonalWindFile"          -> "zonal Wind File"
+        "tauX direction convention" -> "tau X direction convention"
+        "nonHydrostatic"         -> "non Hydrostatic"
+        "ALLOW_NONHYDROSTATIC"   -> "ALLOW NONHYDROSTATIC"
+    """
+    # Split camelCase (e.g. zonalWindFile -> zonal Wind File)
+    result = re.sub(r"([a-z])([A-Z])", r"\1 \2", query)
+    # Replace underscores with spaces
+    result = result.replace("_", " ")
+    return result
 
 
 def search_code(query: str, top_k: int = 5, _db_path: Path = DB_PATH, _chroma_path: Path = CHROMA_PATH) -> list[dict]:
@@ -12,7 +31,7 @@ def search_code(query: str, top_k: int = 5, _db_path: Path = DB_PATH, _chroma_pa
     from src.embedder.store import get_collection
 
     collection = get_collection(_chroma_path)
-    response = ollama.embed(model="nomic-embed-text", input=query)
+    response = ollama.embed(model="nomic-embed-text", input=_normalize_query(query))
     embedding = response.embeddings[0]
 
     results = collection.query(
@@ -307,6 +326,63 @@ def get_doc_source(
     }
 
 
+def list_verification_experiments() -> list[dict]:
+    """Return structured catalogue of all MITgcm verification/tutorial experiments.
+
+    All fields are derived automatically from experiment files.  No Ollama or
+    ChromaDB required — reads directly from MITgcm/verification/.
+
+    Each entry has: name, tutorial, packages, domain_class, Nx, Ny, Nr,
+    grid_type, nonhydrostatic, free_surface, eos_type.
+    """
+    from src.verification_indexer.catalogue import build_catalogue
+    return build_catalogue()
+
+
+def search_verification(query: str, top_k: int = 5, _chroma_path: Path = CHROMA_PATH) -> list[dict]:
+    """Semantic search over MITgcm verification experiment configuration files.
+
+    Searches input/data*, eedata, code/*.h, and packages.conf from all
+    verification experiments.  Returns up to top_k results, deduplicated
+    per (experiment, filename).
+
+    Each result has: experiment, file, filename, snippet (first 400 chars).
+    Requires Ollama and a populated mitgcm_verification ChromaDB collection
+    (pixi run embed-verification).
+    """
+    import ollama
+
+    collection = get_verification_collection(_chroma_path)
+    response = ollama.embed(model="nomic-embed-text", input=_normalize_query(query))
+    embedding = response.embeddings[0]
+
+    results = collection.query(
+        query_embeddings=[embedding],
+        n_results=top_k * 5,
+        include=["metadatas", "distances", "documents"],
+    )
+
+    # Deduplicate: keep best chunk per (experiment, filename)
+    best: dict[tuple[str, str], tuple[float, dict, str]] = {}
+    for meta, dist, doc in zip(
+        results["metadatas"][0], results["distances"][0], results["documents"][0]
+    ):
+        key = (meta["experiment"], meta["filename"])
+        if key not in best or dist < best[key][0]:
+            best[key] = (dist, meta, doc)
+
+    ranked = sorted(best.values(), key=lambda x: x[0])[:top_k]
+    return [
+        {
+            "experiment": meta["experiment"],
+            "file": meta["file"],
+            "filename": meta["filename"],
+            "snippet": doc[:400],
+        }
+        for _, meta, doc in ranked
+    ]
+
+
 def search_docs(query: str, top_k: int = 5, _chroma_path: Path = CHROMA_PATH) -> list[dict]:
     """Semantic search over MITgcm documentation sections.
 
@@ -319,7 +395,7 @@ def search_docs(query: str, top_k: int = 5, _chroma_path: Path = CHROMA_PATH) ->
     import ollama
 
     collection = get_docs_collection(_chroma_path)
-    response = ollama.embed(model="nomic-embed-text", input=query)
+    response = ollama.embed(model="nomic-embed-text", input=_normalize_query(query))
     embedding = response.embeddings[0]
 
     results = collection.query(

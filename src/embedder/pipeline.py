@@ -126,7 +126,14 @@ def run(db_path: Path = DB_PATH, chroma_path: Path = CHROMA_PATH, start_chunk: i
                             break
                         except Exception as e3:
                             if "context length" in str(e3):
-                                log.warning(f"skipping chunk {chunk_id} ({len(d)} chars): context length exceeded")
+                                mid = len(d) // 2
+                                log.warning(f"splitting chunk {chunk_id} ({len(d)} chars) in two")
+                                for suffix, half in (("_a", d[:mid]), ("_b", d[mid:])):
+                                    try:
+                                        emb = ollama.embed(model=EMBED_MODEL, input=[half])["embeddings"][0]
+                                        keep.append((chunk_id + suffix, emb, half, meta))
+                                    except Exception:
+                                        log.warning(f"skipping {chunk_id}{suffix} after split")
                                 break
                             if attempt == 2:
                                 raise

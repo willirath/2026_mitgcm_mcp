@@ -11,9 +11,11 @@ from src.tools import (
     get_doc_source,
     get_package_flags,
     get_subroutine,
+    list_verification_experiments,
     namelist_to_code,
     search_code,
     search_docs,
+    search_verification,
 )
 from src.domain import (
     translate_lab_params,
@@ -21,6 +23,7 @@ from src.domain import (
     lookup_gotcha,
     suggest_experiment_config,
     get_workflow,
+    get_namelist_structure,
 )
 
 mcp = FastMCP("mitgcm")
@@ -123,8 +126,27 @@ def namelist_to_code_tool(param: str) -> list[dict]:
     computation). For most parameters this means INI_PARMS is returned.
     To find where a parameter is actually used, follow up with get_callers
     or search_code with the parameter name as the query.
+
+    If not found, returns a single-item list with a 'warning' key explaining
+    why — the parameter may be an internal variable (COMMON block) rather than
+    a namelist parameter. Check for a 'warning' key before treating results as
+    subroutine records.
     """
-    return namelist_to_code(param)
+    results = namelist_to_code(param)
+    if not results:
+        return [
+            {
+                "warning": (
+                    f"'{param}' was not found as a namelist parameter. "
+                    f"It may be an internal model variable (COMMON block) rather than "
+                    f"a namelist input. Try search_code_tool('{param}') to find where "
+                    f"it is declared or used in the source, or check "
+                    f"get_namelist_structure_tool() to find the correct parameter name "
+                    f"for the domain you are interested in."
+                )
+            }
+        ]
+    return results
 
 
 @mcp.tool()
@@ -321,6 +343,41 @@ def suggest_experiment_config_tool(experiment_type: str) -> dict | None:
 
 
 @mcp.tool()
+def get_namelist_structure_tool() -> dict[str, dict[str, str]]:
+    """Return the MITgcm namelist file → group → description map.
+
+    Use this to orient yourself when you know the domain (e.g. 'open boundary
+    conditions', 'EOS parameters') but do not yet know which namelist file and
+    group to edit.
+
+    The returned dict is keyed by namelist file name (e.g. 'data', 'data.eos',
+    'data.obcs') with inner keys as namelist group names (e.g. 'PARM01',
+    'OBCS_PARM01') and values as description strings.
+
+    Guidance for avoiding rabbit holes:
+    - To find which group reads a *specific parameter by name*, use
+      namelist_to_code_tool instead — this tool gives the overview, not the
+      per-parameter answer.
+    - To understand what a group's parameters do in detail, use search_docs_tool
+      with the group name (e.g. search_docs_tool('OBCS_PARM01')).
+    - Adjoint/optimisation groups (CTRL_*, cost_nml, ecco_*, grdchk_*, optim,
+      obsfit_nml, profiles_nml) are only relevant for adjoint/ECCO runs; skip
+      them for forward experiments.
+    - ATM2D groups (PARM01_ATM2D, ...) are only relevant for the 2-D atmosphere
+      configuration; skip them for ocean / lab experiments.
+    - Package groups with no explicit description (generic 'Package X parameters')
+      belong to specialised packages — use search_docs_tool to learn more.
+
+    Returns
+    -------
+    dict[str, dict[str, str]]
+        { namelist_file: { group_name: description } }
+        Sorted alphabetically by file name.
+    """
+    return get_namelist_structure()
+
+
+@mcp.tool()
 def get_workflow_tool(task: str | None = None) -> dict:
     """Return recommended tool workflows for common tasks.
 
@@ -350,6 +407,42 @@ def get_workflow_tool(task: str | None = None) -> dict:
 
 
 @mcp.tool()
+def list_verification_experiments_tool() -> list[dict]:
+    """Return structured catalogue of all MITgcm verification experiments.
+
+    No arguments required.  Returns one entry per experiment with:
+      name          : directory name (e.g. "tutorial_rotating_tank")
+      tutorial      : True if name starts with "tutorial_"
+      packages      : list of packages enabled in code/packages.conf
+      domain_class  : "ocean" | "atmosphere" | "coupled" | "idealized"
+      Nx, Ny, Nr    : total domain dimensions (or None if SIZE.h absent)
+      grid_type     : "cartesian" | "spherical_polar" | "curvilinear"
+      nonhydrostatic: bool
+      free_surface  : bool (True = free surface, False = rigid lid)
+      eos_type      : str (e.g. "LINEAR", "JMD95Z")
+
+    Use this to find experiments relevant to your goal before calling
+    search_verification_tool or get_doc_source_tool for their namelist content.
+    """
+    return list_verification_experiments()
+
+
+@mcp.tool()
+def search_verification_tool(query: str, top_k: int = 5) -> list[dict]:
+    """Semantic search over MITgcm verification experiment configuration files.
+
+    Searches input/data*, eedata, code/*.h, and packages.conf from all
+    verification experiments.  Returns up to top_k results.
+
+    Each result has: experiment, file, filename, snippet (first 400 chars).
+    Use get_doc_source_tool with the returned file path to read the full content.
+
+    Requires Ollama and pixi run embed-verification to have been run.
+    """
+    return search_verification(query, top_k=top_k)
+
+
+@mcp.tool()
 def get_doc_source_tool(file: str, section: str, offset: int = 0, limit: int = 200) -> dict | None:
     """Return paginated text of a documentation section or header file.
 
@@ -376,6 +469,11 @@ def search_docs_tool(query: str, top_k: int = 5) -> list[dict]:
 
     Each result has: file (RST path relative to MITgcm/doc/), section
     (heading text), snippet (first 400 chars of cleaned section text).
+
+    Use natural-language queries (e.g. 'surface wind forcing file',
+    'open boundary conditions'). For a specific namelist parameter name
+    (e.g. 'zonalWindFile', 'tauRelaxT'), use namelist_to_code_tool instead
+    — semantic search on exact camelCase identifiers gives poor results.
     """
     return search_docs(query, top_k=top_k)
 

@@ -27,7 +27,7 @@ from ..embedder.store import CHROMA_PATH, get_docs_collection
 from .parse import iter_headers, iter_sections
 
 DOC_ROOT = Path("MITgcm/doc")
-VERIFICATION_ROOT = Path("MITgcm/verification")
+MITGCM_ROOT = Path("MITgcm")
 
 
 def _doc_chunks(
@@ -55,14 +55,14 @@ def _doc_chunks(
 
 def run(
     doc_root: Path = DOC_ROOT,
-    verification_root: Path = VERIFICATION_ROOT,
+    mitgcm_root: Path = MITGCM_ROOT,
     chroma_path: Path = CHROMA_PATH,
 ) -> None:
     sections = iter_sections(doc_root)
     log.info(f"Parsed {len(sections)} sections from {doc_root}")
 
-    headers = iter_headers(verification_root)
-    log.info(f"Found {len(headers)} .h files under {verification_root}")
+    headers = iter_headers(mitgcm_root)
+    log.info(f"Found {len(headers)} .h files under {mitgcm_root}")
 
     collection = get_docs_collection(chroma_path)
 
@@ -98,7 +98,14 @@ def run(
                             break
                         except Exception as e3:
                             if "context length" in str(e3):
-                                log.warning(f"skipping {chunk_id} ({len(d)} chars): context length exceeded")
+                                mid = len(d) // 2
+                                log.warning(f"splitting {chunk_id} ({len(d)} chars) in two")
+                                for suffix, half in (("_a", d[:mid]), ("_b", d[mid:])):
+                                    try:
+                                        emb = ollama.embed(model=EMBED_MODEL, input=[half])["embeddings"][0]
+                                        keep.append((chunk_id + suffix, emb, half, meta))
+                                    except Exception:
+                                        log.warning(f"skipping {chunk_id}{suffix} after split")
                                 break
                             if attempt == 2:
                                 raise

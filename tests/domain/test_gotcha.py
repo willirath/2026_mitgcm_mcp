@@ -64,3 +64,45 @@ def test_sidewall_found():
     """lookup_gotcha('sidewall') should return an entry about boundary conditions."""
     results = lookup_gotcha("sidewall")
     assert len(results) >= 1
+
+
+def test_readbinaryprec_found():
+    """lookup_gotcha('readbinaryprec') should return the binary precision entry."""
+    results = lookup_gotcha("readbinaryprec")
+    assert len(results) >= 1
+    assert any("precision" in e["title"].lower() or "readbinaryprec" in e["title"].lower() for e in results)
+
+
+def test_float64_matches_readbinaryprec():
+    """lookup_gotcha('float64') should match the binary precision entry."""
+    results = lookup_gotcha("float64")
+    assert len(results) >= 1
+    assert any("readBinaryPrec" in e["detail"] or "readbinaryprec" in e["title"].lower() for e in results)
+
+
+def test_phihyd_found():
+    """lookup_gotcha('phihyd') should return the INCLUDE_PHIHYD entry."""
+    results = lookup_gotcha("phihyd")
+    assert len(results) >= 1
+    assert any("INCLUDE_PHIHYD" in e["detail"] for e in results)
+
+
+def test_gfd_packages_found():
+    """lookup_gotcha('packages.conf') should return the gfd group entry."""
+    results = lookup_gotcha("packages.conf")
+    assert len(results) >= 1
+    assert any("gfd" in e["detail"] for e in results)
+
+
+def test_size_h_max_olx_found():
+    """lookup_gotcha('MAX_OLX') should return the SIZE.h entry."""
+    results = lookup_gotcha("MAX_OLX")
+    assert len(results) >= 1
+    assert any("SIZE.h" in e["title"] or "MAX_OLX" in e["detail"] for e in results)
+
+
+def test_mpi_flag_found():
+    """lookup_gotcha('-mpi') should return the genmake2 MPI entry."""
+    results = lookup_gotcha("-mpi")
+    assert len(results) >= 1
+    assert any("genmake2" in e["title"].lower() or "-mpi" in e["detail"] for e in results)

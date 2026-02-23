@@ -96,10 +96,12 @@ def test_quickstart_has_build_and_run():
     assert "run" in qs
 
 
-def test_quickstart_has_dockerfile():
-    """quickstart should include a dockerfile key with the Dockerfile template."""
+def test_quickstart_has_dockerfiles():
+    """quickstart should include dockerfile_amd64, dockerfile_arm64, and dockerfile_note."""
     qs = suggest_experiment_config("rotating_convection")["quickstart"]
-    assert "dockerfile" in qs
+    assert "dockerfile_amd64" in qs
+    assert "dockerfile_arm64" in qs
+    assert "dockerfile_note" in qs
 
 
 def test_quickstart_has_directory_structure():
@@ -110,9 +112,10 @@ def test_quickstart_has_directory_structure():
 
 
 def test_quickstart_build_references_docker_image():
-    """quickstart dockerfile should reference the runtime GHCR image."""
+    """Both Dockerfiles should reference the runtime GHCR image."""
     qs = suggest_experiment_config("rotating_convection")["quickstart"]
-    assert "ghcr.io/willirath/2026-mitgcm-mcp" in qs["dockerfile"]
+    assert "ghcr.io/willirath/2026-mitgcm-mcp" in qs["dockerfile_amd64"]
+    assert "ghcr.io/willirath/2026-mitgcm-mcp" in qs["dockerfile_arm64"]
 
 
 def test_quickstart_both_experiment_types():
@@ -138,10 +141,12 @@ def test_quickstart_directory_structure_has_required_keys():
     assert "input/data.diagnostics" in ds
 
 
-def test_quickstart_directory_structure_has_dockerfile():
-    """quickstart.directory_structure should include a Dockerfile entry."""
+def test_quickstart_directory_structure_has_dockerfiles():
+    """quickstart.directory_structure should include both platform Dockerfile entries."""
     qs = suggest_experiment_config("rotating_convection")["quickstart"]
-    assert "Dockerfile" in qs["directory_structure"]
+    ds = qs["directory_structure"]
+    assert "Dockerfile.amd64" in ds
+    assert "Dockerfile.arm64" in ds
 
 
 def test_quickstart_directory_structure_has_gen_input():
@@ -157,15 +162,17 @@ def test_quickstart_run_references_docker_image():
 
 
 def test_quickstart_build_uses_optfile():
-    """quickstart dockerfile must include -optfile (required by genmake2)."""
+    """Both Dockerfiles must include -optfile (required by genmake2)."""
     qs = suggest_experiment_config("rotating_convection")["quickstart"]
-    assert "-optfile" in qs["dockerfile"]
+    assert "-optfile" in qs["dockerfile_amd64"]
+    assert "-optfile" in qs["dockerfile_arm64"]
 
 
 def test_quickstart_build_uses_rootdir():
-    """quickstart dockerfile must include -rootdir."""
+    """Both Dockerfiles must include -rootdir."""
     qs = suggest_experiment_config("rotating_convection")["quickstart"]
-    assert "-rootdir" in qs["dockerfile"]
+    assert "-rootdir" in qs["dockerfile_amd64"]
+    assert "-rootdir" in qs["dockerfile_arm64"]
 
 
 def test_quickstart_build_is_docker_build():
@@ -174,16 +181,37 @@ def test_quickstart_build_is_docker_build():
     assert "docker build" in qs["build"]
 
 
-def test_quickstart_run_allow_run_as_root():
-    """quickstart dockerfile CMD must include --allow-run-as-root for Docker MPI."""
+def test_quickstart_no_allow_run_as_root():
+    """--allow-run-as-root must not appear in either Dockerfile (MPICH/hydra rejects it)."""
     qs = suggest_experiment_config("rotating_convection")["quickstart"]
-    assert "--allow-run-as-root" in qs["dockerfile"]
+    assert "--allow-run-as-root" not in qs["dockerfile_amd64"]
+    assert "--allow-run-as-root" not in qs["dockerfile_arm64"]
+
+
+def test_quickstart_dockerfiles_use_mpi_flag():
+    """-mpi flag must appear in genmake2 invocation in both Dockerfiles."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "-mpi" in qs["dockerfile_amd64"]
+    assert "-mpi" in qs["dockerfile_arm64"]
+
+
+def test_quickstart_amd64_uses_correct_optfile():
+    """AMD64 Dockerfile must use linux_amd64_gfortran optfile."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "linux_amd64_gfortran" in qs["dockerfile_amd64"]
+
+
+def test_quickstart_arm64_uses_correct_optfile():
+    """ARM64 Dockerfile must use linux_arm64_gfortran optfile."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "linux_arm64_gfortran" in qs["dockerfile_arm64"]
 
 
 def test_quickstart_run_symlinks_input():
-    """quickstart dockerfile should symlink input files into the run directory."""
+    """Both Dockerfiles should symlink input files into the run directory."""
     qs = suggest_experiment_config("rotating_convection")["quickstart"]
-    assert "input/*" in qs["dockerfile"]
+    assert "input/*" in qs["dockerfile_amd64"]
+    assert "input/*" in qs["dockerfile_arm64"]
 
 
 def test_quickstart_run_mounts_output():
