@@ -191,7 +191,10 @@ _WORKFLOWS: dict = {
                     "abort at startup (CONFIG_CHECK, PACKAGES_CHECK, missing input "
                     "file, DIAGNOSTICS_SIZE too small). Fix any startup aborts before "
                     "proceeding. For new experiments: add one component (e.g. EOS, "
-                    "then RBCS, then diagnostics), reach stage 2 after each addition."
+                    "then RBCS, then diagnostics), reach stage 2 after each addition. "
+                    "Tip: for namelist-only changes (no code changes), use the input "
+                    "volume mount (run_with_input_mount in the quickstart) to avoid a "
+                    "full rebuild — a rebuild is only needed when code/ changes."
                 ),
             },
             {
@@ -202,6 +205,8 @@ _WORKFLOWS: dict = {
                     "STDOUT.0000 for: n3dWetPts (must be > 0), theta_mean (must be "
                     "finite and near the initial value), dynstat diagnostics (velocity "
                     "and temperature RMS must be finite and physically reasonable). "
+                    "With the quickstart volume mount, STDOUT.0000 is at "
+                    "output/STDOUT.0000 on the host. "
                     "Consider a minimal domain (coarsest resolution, smallest Nx/Ny/Nr "
                     "that preserves the physics) to keep turnaround fast at this stage. "
                     "Use check_scales_tool to confirm CFL and Ekman layer resolution "
@@ -214,8 +219,8 @@ _WORKFLOWS: dict = {
                     "Stage 4 — Production run. "
                     "Scale to full domain, full duration. Set nTimeSteps, dumpFreq, "
                     "and chkPtFreq for the intended run. Mount an output volume "
-                    "(see suggest_experiment_config_tool quickstart.run) and verify "
-                    "diagnostics files are written."
+                    "(see the 'run' key in suggest_experiment_config_tool quickstart "
+                    "output) and verify diagnostics files are written."
                 ),
             },
         ],

@@ -268,6 +268,58 @@ CATALOGUE: list[dict] = [
         ),
     },
     {
+        "title": "Adams-Bashforth 3: β=0.281105 gives maximum CFL stability limit",
+        "keywords": [
+            "adams-bashforth", "adams bashforth", "ab3", "adamsbashforth3",
+            "beta_ab", "alph_ab", "cfl", "timestep", "stability", "parm03",
+        ],
+        "summary": (
+            "AB-3 has two useful configurations: standard (β=5/12, CFL limit 0.724) "
+            "and maximum-stability (β=0.281105, CFL limit 0.786). "
+            "Both are controlled via alph_AB and beta_AB in data &PARM03."
+        ),
+        "detail": (
+            "MITgcm's Adams-Bashforth 3 scheme uses:\n"
+            "  g^{n+1/2} = (1 + α + β) g^n  -  (α + 2β) g^{n-1}  +  β g^{n-2}\n"
+            "Two named configurations:\n"
+            "  Standard AB-3:          α=0.5,  β=5/12  → CFL stability limit 0.724\n"
+            "  Maximum stability:      β=0.281105       → CFL stability limit 0.786\n"
+            "The maximum-stability β is not a named mode — to use it, set:\n"
+            "  beta_AB = 0.281105\n"
+            "in data &PARM03. Both alph_AB and beta_AB are PARM03 parameters. "
+            "The scheme automatically ramps up: first-order at iter 0, AB-2 at iter 1, "
+            "AB-3 from iter 2 onward (no instability at startup). "
+            "ALLOW_ADAMSBASHFORTH_3 must be defined in CPP_OPTIONS.h; without it "
+            "the model falls back to AB-2."
+        ),
+    },
+    {
+        "title": "EXACT_CONSERV is now mandatory — #undef causes startup abort",
+        "keywords": [
+            "exact_conserv", "exactconserv", "cpp_options", "retired",
+            "mandatory", "startup abort", "config_check",
+        ],
+        "summary": (
+            "EXACT_CONSERV was once optional but is now a required CPP flag. "
+            "Old CPP_OPTIONS.h files with '#undef EXACT_CONSERV' cause a "
+            "CONFIG_CHECK startup abort."
+        ),
+        "detail": (
+            "MITgcm's CONFIG_CHECK aborts at startup if '#undef EXACT_CONSERV' "
+            "is present in CPP_OPTIONS.h:\n"
+            "  #ifndef EXACT_CONSERV\n"
+            "    CONFIG_CHECK: #undef EXACT_CONSERV not allowed in CPP_OPTIONS.h\n"
+            "    since CPP option EXACT_CONSERV has been retired\n"
+            "  #endif\n"
+            "The confusing error message says the flag 'has been retired', which "
+            "actually means it is now always-on (mandatory). The flag is no longer "
+            "optional — you must not undefine it. "
+            "Fix: remove the '#undef EXACT_CONSERV' line from code/CPP_OPTIONS.h. "
+            "If your CPP_OPTIONS.h was copied from an old verification experiment, "
+            "check for this line and delete it."
+        ),
+    },
+    {
         "title": "-mpi flag required in genmake2 even for single-process runs",
         "keywords": [
             "-mpi", "genmake2", "mpi", "single process", "np=1", "mpirun",

@@ -219,3 +219,70 @@ def test_quickstart_run_mounts_output():
     qs = suggest_experiment_config("rotating_convection")["quickstart"]
     assert "-v" in qs["run"]
     assert "output" in qs["run"]
+
+
+def test_quickstart_has_build_arm64():
+    """quickstart should have a build_arm64 key."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "build_arm64" in qs
+    assert "linux/arm64" in qs["build_arm64"]
+
+
+def test_quickstart_build_amd64_has_platform_flag():
+    """amd64 build command must include --platform linux/amd64."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "--platform linux/amd64" in qs["build"]
+
+
+def test_quickstart_has_run_with_input_mount():
+    """quickstart should have run_with_input_mount for namelist iteration."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "run_with_input_mount" in qs
+    assert "input" in qs["run_with_input_mount"]
+    assert ":ro" in qs["run_with_input_mount"]
+
+
+def test_quickstart_notes_np_rebuild():
+    """quickstart notes must warn that NP>1 requires a rebuild, not just -e NP=..."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    notes_text = " ".join(qs["notes"])
+    assert "rebuild" in notes_text.lower() or "SIZE.h" in notes_text
+
+
+def test_quickstart_notes_mentions_numpy():
+    """quickstart notes should mention numpy as a prerequisite."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    notes_text = " ".join(qs["notes"])
+    assert "numpy" in notes_text.lower()
+
+
+def test_rotating_convection_has_exf():
+    """rotating_convection cpp_options must include ALLOW_EXF."""
+    result = suggest_experiment_config("rotating_convection")
+    assert "ALLOW_EXF" in result["cpp_options"]
+
+
+def test_rotating_convection_has_exf_namelist():
+    """rotating_convection namelists should include data.exf."""
+    result = suggest_experiment_config("rotating_convection")
+    assert "data.exf" in result["namelists"]
+
+
+def test_rotating_convection_note_no_obcs_for_surface_flux():
+    """rotating_convection notes must not attribute surface flux to OBCS."""
+    result = suggest_experiment_config("rotating_convection")
+    notes_text = " ".join(result["notes"])
+    assert "obcs" not in notes_text.lower() or "exf" in notes_text.lower()
+
+
+def test_quickstart_directory_structure_has_data_exf():
+    """quickstart directory_structure should include input/data.exf."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "input/data.exf" in qs["directory_structure"]
+
+
+def test_dockerfiles_no_redundant_mkdir():
+    """Dockerfiles must not contain 'mkdir -p /experiment/run' (WORKDIR creates it)."""
+    qs = suggest_experiment_config("rotating_convection")["quickstart"]
+    assert "mkdir -p /experiment/run" not in qs["dockerfile_amd64"]
+    assert "mkdir -p /experiment/run" not in qs["dockerfile_arm64"]

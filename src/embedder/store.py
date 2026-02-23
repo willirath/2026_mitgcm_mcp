@@ -9,25 +9,22 @@ DOCS_COLLECTION_NAME = "mitgcm_docs"
 VERIFICATION_COLLECTION_NAME = "mitgcm_verification"
 
 
-def get_collection(path: Path = CHROMA_PATH) -> chromadb.Collection:
+def get_collection(name: str, path: Path = CHROMA_PATH) -> chromadb.Collection:
+    """Return (or create) a named ChromaDB collection at the given path."""
     client = chromadb.PersistentClient(path=str(path))
     return client.get_or_create_collection(
-        name=COLLECTION_NAME,
+        name=name,
         metadata={"hnsw:space": "cosine"},
     )
+
+
+def get_subroutine_collection(path: Path = CHROMA_PATH) -> chromadb.Collection:
+    return get_collection(COLLECTION_NAME, path)
 
 
 def get_docs_collection(path: Path = CHROMA_PATH) -> chromadb.Collection:
-    client = chromadb.PersistentClient(path=str(path))
-    return client.get_or_create_collection(
-        name=DOCS_COLLECTION_NAME,
-        metadata={"hnsw:space": "cosine"},
-    )
+    return get_collection(DOCS_COLLECTION_NAME, path)
 
 
 def get_verification_collection(path: Path = CHROMA_PATH) -> chromadb.Collection:
-    client = chromadb.PersistentClient(path=str(path))
-    return client.get_or_create_collection(
-        name=VERIFICATION_COLLECTION_NAME,
-        metadata={"hnsw:space": "cosine"},
-    )
+    return get_collection(VERIFICATION_COLLECTION_NAME, path)

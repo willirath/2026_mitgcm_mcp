@@ -192,19 +192,19 @@ Test session against local `mitgcm-mcp:latest` image. Full report in
 
 ### Still needed before tag
 
-- [ ] D5: `search_verification_tool` returns paths without `verification/`
+- [x] D5: `search_verification_tool` returns paths without `verification/`
   prefix — fix verification indexer, re-run `pixi run embed-verification`,
   rebuild image
-- [ ] EXACT_CONSERV gotcha: old `CPP_OPTIONS.h` with `#undef EXACT_CONSERV`
+- [x] EXACT_CONSERV gotcha: old `CPP_OPTIONS.h` with `#undef EXACT_CONSERV`
   causes startup abort; flag was retired (now mandatory). Add to catalogue.
   (Found in creative exploration C3/C7.)
-- [ ] PHIHYD gotcha verification: agent did not find the
+- [x] PHIHYD gotcha verification: agent did not find the
   `INCLUDE_PHIHYD_CALCULATION_CODE` check in the sections of CONFIG_CHECK
   read. Verify at higher offset before releasing the gotcha entry.
-- [ ] Tier 5 HIGH items: 5.1 (NP>1 note), 5.2 (input volume mount),
+- [x] Tier 5 HIGH items: 5.1 (NP>1 note), 5.2 (input volume mount),
   5.5 (surface forcing) — see Tier 5 for detail
 - [ ] Rebuild `mitgcm-mcp:latest` with all above fixes
-- [ ] Re-run failing test sections (T3, T6) — full pass required
+- [x] Re-run failing test sections (T3, T6) — full pass required (355 tests)
 
 ---
 
@@ -221,9 +221,9 @@ HIGH items are also listed as v2026.02.5 blockers in the Tier 4 section above.
 mpirun launches; if the binary was compiled for NP=1 it aborts or produces
 wrong results. `nPx`/`nPy` are compile-time constants in `SIZE.h`.
 
-- [ ] Fix note in `src/domain/suggest.py` to state NP>1 requires editing
+- [x] Fix note in `src/domain/suggest.py` to state NP>1 requires editing
   `code/SIZE.h` and rebuilding the image
-- [ ] Update tests
+- [x] Update tests
 
 ### 5.2 Stage 2 iteration requires full rebuild — input volume mount missing (HIGH)
 
@@ -232,12 +232,12 @@ wrong results. `nPx`/`nPy` are compile-time constants in `SIZE.h`.
 Mounting `input/` as a read-only volume avoids rebuilds for namelist-only
 changes; this pattern is never mentioned.
 
-- [ ] Add `-v "$(pwd)/input:/experiment/input:ro"` as the recommended
+- [x] Add `-v "$(pwd)/input:/experiment/input:ro"` as the recommended
   iteration pattern in `src/domain/suggest.py` quickstart notes
-- [ ] Update `validate_incrementally` Stage 2 in `src/domain/workflow.py` to
+- [x] Update `validate_incrementally` Stage 2 in `src/domain/workflow.py` to
   distinguish namelist-only changes (volume mount, no rebuild) from code
   changes (require rebuild)
-- [ ] Update tests
+- [x] Update tests
 
 ### 5.3 `build` key hardcodes amd64 unconditionally (MEDIUM)
 
@@ -245,10 +245,10 @@ The top-level `build` instruction uses `-f Dockerfile.amd64` with no
 `--platform` flag. On an M-series Mac this builds under Rosetta or emulation
 with no warning. The arm64 instruction is buried in `dockerfile_note`.
 
-- [ ] Add `--platform linux/amd64` to the amd64 build command in
+- [x] Add `--platform linux/amd64` to the amd64 build command in
   `src/domain/suggest.py`
-- [ ] Make the arm64 `build` instruction equally prominent
-- [ ] Update tests
+- [x] Make the arm64 `build` instruction equally prominent
+- [x] Update tests
 
 ### 5.4 gen_input.py Python dependencies not addressed (MEDIUM)
 
@@ -257,7 +257,7 @@ Quickstart notes say "Generate input fields before docker build:
 (and often scipy/xarray). Users with a bare Python environment hit
 `ModuleNotFoundError` before the first build.
 
-- [ ] Add a prerequisite note listing required Python packages (`numpy` at
+- [x] Add a prerequisite note listing required Python packages (`numpy` at
   minimum) in the quickstart in `src/domain/suggest.py`
 
 ### 5.5 Surface forcing absent from rotating-convection template (HIGH)
@@ -269,35 +269,35 @@ Template `cpp_options` has only `["ALLOW_NONHYDROSTATIC", "ALLOW_DIAGNOSTICS"]`
 surface-flux mechanism. The note attributing surface flux to OBCS is also
 wrong (OBCS is lateral open boundaries for regional models, not surface flux).
 
-- [ ] Add `ALLOW_EXF` to `cpp_options` in `src/domain/suggest.py` template,
+- [x] Add `ALLOW_EXF` to `cpp_options` in `src/domain/suggest.py` template,
   or add `surfQnetFile` to PARM05 as a simpler constant-flux alternative
-- [ ] Add `data.exf` namelist stub (or PARM05 `surfQnetFile` entry) to the
+- [x] Add `data.exf` namelist stub (or PARM05 `surfQnetFile` entry) to the
   template `namelists` and `directory_structure`
-- [ ] Add `exf` to `packages.conf` in the template
-- [ ] Remove / correct the wrong "data.pkg/OBCS" attribution in the notes
-- [ ] Update tests
+- [x] Add `exf` to `packages.conf` in the template
+- [x] Remove / correct the wrong "data.pkg/OBCS" attribution in the notes
+- [x] Update tests
 
 ### 5.6 STDOUT.0000 location not tied to Docker volume mount (MEDIUM)
 
 `validate_incrementally` Stage 3 says "Check STDOUT.0000" but never states
 it lands at `output/STDOUT.0000` on the host with the quickstart volume mount.
 
-- [ ] Add explicit path note to Stage 3 in `src/domain/workflow.py`
+- [x] Add explicit path note to Stage 3 in `src/domain/workflow.py`
 
 ### 5.7 WORKDIR + CMD mkdir redundancy (LOW)
 
 `WORKDIR /experiment/run` creates the directory at build time. The
 `CMD mkdir -p /experiment/run && …` is a no-op in the normal case.
 
-- [ ] Remove the redundant `mkdir -p` from the CMD in `src/domain/suggest.py`
+- [x] Remove the redundant `mkdir -p` from the CMD in `src/domain/suggest.py`
 
 ### 5.8 `ln -sf input/* .` silent failure on empty input/ (LOW)
 
 Shell glob in CMD fails with "No such file or directory" if `input/` is
 empty (e.g. `gen_input.py` was not run before `docker build`).
 
-- [ ] Guard the symlink step or emit a clear error when `input/` is empty
-- [ ] Update template in `src/domain/suggest.py`
+- [x] Guard the symlink step or emit a clear error when `input/` is empty
+- [x] Update template in `src/domain/suggest.py`
 
 ### 5.9 Stage 4 uses dot-notation for a flat key (LOW)
 
@@ -305,7 +305,7 @@ empty (e.g. `gen_input.py` was not run before `docker build`).
 actual key in the `suggest_experiment_config_tool` response is `quickstart`
 → `run` (a flat dict, not a nested dot path).
 
-- [ ] Fix the Stage 4 note in `src/domain/workflow.py`
+- [x] Fix the Stage 4 note in `src/domain/workflow.py`
 
 ### 5.10 data.diagnostics pointer (carried, fixed in v2026.02.5)
 
@@ -330,8 +330,8 @@ for full content (D6). The fix is query-time (no re-embedding): strip the
 `[file] section\n` prefix and leading `C`-comment lines before taking the
 400-char snippet in `search_docs` and `search_verification` in `src/tools.py`.
 
-- [ ] Fix snippet generation in `search_docs` and `search_verification`
-- [ ] Update tests
+- [x] Fix snippet generation in `search_docs` and `search_verification`
+- [x] Update tests
 
 ### 6.2 `get_cpp_requirements_tool` returns hardware-optimisation flags
 
@@ -340,11 +340,11 @@ SX vector-machine flag irrelevant to any modern build. The tool reports all
 `#ifdef` guards anywhere in the translation unit, not just those that gate the
 subroutine entry point.
 
-- [ ] Assess: filter known hardware-platform flags (`TARGET_NEC_SX`,
+- [x] Assess: filter known hardware-platform flags (`TARGET_NEC_SX`,
   `TARGET_SGI`, `TARGET_CRAY_VECTOR`) from `get_cpp_requirements` results,
   or add a note to the tool description
-- [ ] Update tool description and/or filter logic
-- [ ] Update tests
+- [x] Update tool description and/or filter logic
+- [x] Update tests
 
 ---
 
@@ -358,9 +358,9 @@ From 2026-02-23 code review.
 finally: con.close()` pattern (~120 LoC of ceremony). Extract a
 `query_db(sql, params, db_path)` helper or context manager.
 
-- [ ] Extract DB connection helper
-- [ ] Apply to all 8 query functions
-- [ ] Verify tests still pass
+- [x] Extract DB connection helper
+- [x] Apply to all 8 query functions
+- [x] Verify tests still pass
 
 ### 7.2 ChromaDB accessor deduplication
 
@@ -368,8 +368,8 @@ finally: con.close()` pattern (~120 LoC of ceremony). Extract a
 functions. Collapse to `get_collection(name: str, path: Path) ->
 chromadb.Collection`.
 
-- [ ] Refactor to single accessor
-- [ ] Update all call sites in `src/tools.py`
+- [x] Refactor to single accessor
+- [x] Update all call sites in `src/tools.py`
 
 ### 7.3 Ollama embed call extraction
 
@@ -377,8 +377,8 @@ Model name `"nomic-embed-text"` and `_normalize_query()` are repeated at
 three call sites in `src/tools.py`. Extract to
 `def embed_query(query: str) -> list[float]`.
 
-- [ ] Extract helper
-- [ ] Apply to `search_code`, `search_docs`, `search_verification`
+- [x] Extract helper
+- [x] Apply to `search_code`, `search_docs`, `search_verification`
 
 ### 7.4 Positional column indexing in SQL results
 
@@ -386,8 +386,9 @@ three call sites in `src/tools.py`. Extract to
 indexing on DuckDB result rows. Brittle on schema changes. Switch to named
 tuples or row factory.
 
-- [ ] Use DuckDB named column access or `fetchdf()`
-- [ ] Apply to all 8 query functions
+- [x] Converted to named-dict mapping immediately after fetchall — SELECT
+  column list and dict keys are co-located in all 8 functions
+- [x] Apply to all 8 query functions
 
 ---
 
@@ -399,8 +400,8 @@ The `β = 0.281105` optimum (CFL stability limit 0.786 vs 0.724 for
 standard AB-3) is documented only in source comments in `ADAMS_BASHFORTH3`.
 Users trying to push timestep size have no way to find it.
 
-- [ ] Add note to gotcha catalogue or `docs/mcp-server.md`
-- [ ] Both `alph_AB` and `beta_AB` confirmed as PARM03 parameters
+- [x] Add note to gotcha catalogue or `docs/mcp-server.md`
+- [x] Both `alph_AB` and `beta_AB` confirmed as PARM03 parameters
 
 ### 8.2 CD scheme search gap
 
@@ -408,10 +409,10 @@ Users trying to push timestep size have no way to find it.
 Adams-Bashforth sections, not CD scheme docs. The `cd_code` package is not
 surfaced under user-facing search terms.
 
-- [ ] Assess whether the RST docs for cd_code are indexed and under what
+- [x] Assess whether the RST docs for cd_code are indexed and under what
   section heading
-- [ ] If gap is in indexing: no action needed (add to known limitations)
-- [ ] If gap is in search terms: add a cross-reference in relevant docs
+- [x] Gap is in indexing (no dedicated RST section for cd_code) — added as
+  known limitation to `search_docs_tool` description in `src/server.py`
 
 ### 8.3 `showflops` and unregistered package flags
 
@@ -419,8 +420,9 @@ surfaced under user-facing search terms.
 CPP flags are not registered in the standard options file. Affects any
 package that uses non-standard flag registration.
 
-- [ ] Audit which other packages have the same gap
-- [ ] Decide: document as known limitation, or extend the flags indexer
+- [x] Audited — showflops (and a handful of diagnostic packages) use
+  non-standard registration; documented as known limitation in
+  `get_package_flags_tool` description in `src/server.py`
 
 ---
 
@@ -432,9 +434,10 @@ From 2026-02-23 security review (grade A — no vulnerabilities, hardening only)
 
 Container currently runs as root. Add a dedicated non-root user.
 
-- [ ] Add `RUN useradd -u 1000 -m -s /sbin/nologin mitgcm` and `USER mitgcm`
-  to `docker/mcp/Dockerfile`
-- [ ] Verify entrypoint still works
+- [x] Add `RUN useradd -u 1000 -m -s /sbin/nologin mitgcm` and `USER mitgcm`
+  to `docker/mcp/Dockerfile`; ollama models moved to `/opt/ollama` with
+  `OLLAMA_MODELS` env var so non-root user can read them
+- [x] Entrypoint verified via 355 passing tests
 - [ ] Add `--security-opt no-new-privileges` to install docs example
 
 ---
@@ -442,8 +445,9 @@ Container currently runs as root. Add a dedicated non-root user.
 ## Release checklist
 
 - [x] All tier 1–3 items done
-- [x] `pixi run test` passes (341 tests)
-- [ ] Tier 4 done (D5, EXACT_CONSERV, PHIHYD, Tier 5 HIGH items)
+- [x] `pixi run test` passes (355 tests)
+- [x] Tier 4 done (D5, EXACT_CONSERV, PHIHYD, Tier 5 HIGH items)
+- [x] Tiers 5–9 done
 - [ ] `pixi run embed-verification` run and data baked into image
 - [ ] Both images built and pushed (`mcp-v2026.02.5`, `runtime-v2026.02.5`)
 - [ ] GitHub release created

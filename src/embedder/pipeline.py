@@ -17,7 +17,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 from ..indexer.schema import DB_PATH, connect as duckdb_connect
-from .store import CHROMA_PATH, get_collection
+from .store import CHROMA_PATH, get_subroutine_collection
 
 EMBED_MODEL = "nomic-embed-text"
 BATCH_SIZE = 10
@@ -88,7 +88,7 @@ def run(db_path: Path = DB_PATH, chroma_path: Path = CHROMA_PATH, start_chunk: i
     con.close()
     log.info(f"Loaded {len(rows)} subroutines from DuckDB")
 
-    collection = get_collection(chroma_path)
+    collection = get_subroutine_collection(chroma_path)
 
     all_chunks = []
     for r in rows:

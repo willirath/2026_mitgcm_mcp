@@ -174,6 +174,13 @@ def get_package_flags_tool(package_name: str) -> list[dict]:
 
     Name lookup is case-insensitive. Returns an empty list if not found.
     Each result has cpp_flag and description fields.
+
+    Known limitation: packages that register flags through non-standard
+    mechanisms (outside the PACKAGE_OPTIONS file pattern) return an empty
+    list even when they do define CPP flags. Confirmed examples: showflops
+    (uses TIME_PER_TIMESTEP_SFP, USE_PAPI_FLOPS_SFP, USE_PCL_FLOPS_SFP).
+    For such packages, use search_code_tool or search_docs_tool to discover
+    their flags.
     """
     return get_package_flags(package_name)
 
@@ -477,9 +484,13 @@ def search_docs_tool(query: str, top_k: int = 5) -> list[dict]:
 
     Results may include .h header files (e.g. model/inc/SIZE.h,
     eesupp/inc/EXCH.h, verification/*/code/SIZE.h). For these, the snippet
-    often shows only the opening comment block — the actual declarations
-    (PARAMETER statements, COMMON blocks) start further in. Always follow
-    up with get_doc_source_tool(file, section) to read the full content.
+    skips leading Fortran C-comments and starts at the first declaration.
+    Follow up with get_doc_source_tool(file, section) to read the full content.
+
+    Known search gaps: the CD scheme (cd_code package, useCDscheme in PARM01)
+    is not surfaced under common search terms like 'CD scheme Coriolis'. If
+    you need CD scheme documentation, search for 'cd_code' or use
+    search_code_tool('CD_CODE_SCHEME') to read the source directly.
     """
     return search_docs(query, top_k=top_k)
 

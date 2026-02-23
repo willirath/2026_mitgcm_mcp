@@ -12,8 +12,8 @@ FROM python:3.13-slim@sha256:3de9a8d7aedbb7984dc18f2dff178a7850f16c1ae7c34ba9d7e
 # Ollama binary (statically compiled Go — works on any Linux/glibc)
 COPY --from=model-builder /usr/bin/ollama /usr/bin/ollama
 
-# Pre-pulled model weights
-COPY --from=model-builder /root/.ollama /root/.ollama
+# Pre-pulled model weights — copy to /opt/ollama so a non-root user can read them
+COPY --from=model-builder /root/.ollama /opt/ollama
 
 # libgomp is required by onnxruntime (a chromadb transitive dependency)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -30,6 +30,9 @@ RUN pip install --no-cache-dir \
     "fastapi>=0.129.0,<0.130" \
     "f90nml>=1.4,<2"
 
+# Non-root user: dedicated UID 1000, no login shell
+RUN useradd -u 1000 -m -s /sbin/nologin mitgcm
+
 WORKDIR /app
 
 # Application source
@@ -39,6 +42,12 @@ COPY src/ /app/src/
 COPY data/ /app/data/
 
 COPY docker/mcp/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN chmod +x /entrypoint.sh && \
+    chown -R mitgcm:mitgcm /app /opt/ollama
+
+# Tell Ollama where the pre-pulled model weights live
+ENV OLLAMA_MODELS=/opt/ollama/models
+
+USER mitgcm
 
 ENTRYPOINT ["/entrypoint.sh"]

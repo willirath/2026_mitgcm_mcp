@@ -106,3 +106,30 @@ def test_mpi_flag_found():
     results = lookup_gotcha("-mpi")
     assert len(results) >= 1
     assert any("genmake2" in e["title"].lower() or "-mpi" in e["detail"] for e in results)
+
+
+def test_exact_conserv_found():
+    """lookup_gotcha('EXACT_CONSERV') should return the retired-flag entry."""
+    results = lookup_gotcha("EXACT_CONSERV")
+    assert len(results) >= 1
+    assert any("EXACT_CONSERV" in e["detail"] for e in results)
+
+
+def test_exact_conserv_startup_abort():
+    """EXACT_CONSERV entry should mention startup abort."""
+    results = lookup_gotcha("exact_conserv")
+    assert any("abort" in e["detail"].lower() for e in results)
+
+
+def test_ab3_beta_found():
+    """lookup_gotcha('adams-bashforth') should return the AB-3 stability entry."""
+    results = lookup_gotcha("adams-bashforth")
+    assert len(results) >= 1
+    assert any("0.281105" in e["detail"] for e in results)
+
+
+def test_ab3_beta_ab_parm03():
+    """AB-3 entry should mention beta_AB and PARM03."""
+    results = lookup_gotcha("beta_ab")
+    assert len(results) >= 1
+    assert any("beta_AB" in e["detail"] and "PARM03" in e["detail"] for e in results)

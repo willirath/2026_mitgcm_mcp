@@ -20,6 +20,7 @@ _RUNTIME_IMAGE = "ghcr.io/willirath/2026-mitgcm-mcp:runtime-latest"
 _DOCKERFILE_AMD64 = (
     f"FROM {_RUNTIME_IMAGE}\n"
     "# Platform: linux/amd64  (x86-64 hosts)\n"
+    "# Build with: docker build --platform linux/amd64 -t my_experiment -f Dockerfile.amd64 .\n"
     "COPY code/ /experiment/code/\n"
     "COPY input/ /experiment/input/\n"
     "RUN mkdir -p /experiment/build && cd /experiment/build && \\\n"
@@ -30,16 +31,15 @@ _DOCKERFILE_AMD64 = (
     "    make depend && make -j$(nproc)\n"
     "ENV NP=1\n"
     "WORKDIR /experiment/run\n"
-    "CMD mkdir -p /experiment/run && \\\n"
-    "    ln -sf /experiment/build/mitgcmuv . && \\\n"
-    "    ln -sf /experiment/input/* . && \\\n"
+    "CMD ln -sf /experiment/build/mitgcmuv . && \\\n"
+    "    { [ -n \"$(ls -A /experiment/input/)\" ] && ln -sf /experiment/input/* .; } && \\\n"
     "    mpirun -np $NP ./mitgcmuv\n"
 )
 
 _DOCKERFILE_ARM64 = (
     f"FROM {_RUNTIME_IMAGE}\n"
     "# Platform: linux/arm64  (Apple Silicon M-series, ARM64 cloud instances)\n"
-    "# Build with: docker build --platform linux/arm64 -t my_experiment .\n"
+    "# Build with: docker build --platform linux/arm64 -t my_experiment -f Dockerfile.arm64 .\n"
     "#\n"
     "# If compilation fails with 'Type mismatch in argument' errors, add\n"
     "# code/genmake_local containing:\n"
@@ -54,9 +54,8 @@ _DOCKERFILE_ARM64 = (
     "    make depend && make -j$(nproc)\n"
     "ENV NP=1\n"
     "WORKDIR /experiment/run\n"
-    "CMD mkdir -p /experiment/run && \\\n"
-    "    ln -sf /experiment/build/mitgcmuv . && \\\n"
-    "    ln -sf /experiment/input/* . && \\\n"
+    "CMD ln -sf /experiment/build/mitgcmuv . && \\\n"
+    "    { [ -n \"$(ls -A /experiment/input/)\" ] && ln -sf /experiment/input/* .; } && \\\n"
     "    mpirun -np $NP ./mitgcmuv\n"
 )
 
@@ -92,6 +91,10 @@ _QUICKSTART: dict = {
         ),
         "input/data": "PARM01, PARM03, PARM04 from translate_lab_params_tool",
         "input/data.eos": "EOS_PARM01 from namelists['data.eos'] in this response",
+        "input/data.exf": (
+            "Required when ALLOW_EXF is in cpp_options. "
+            "Set hflxconst for a uniform heat flux or hflxFile for a binary field."
+        ),
         "input/data.pkg": "useXXX=.TRUE. for each active package",
         "input/data.diagnostics": (
             "Required when diagnostics package is active. "
@@ -100,6 +103,7 @@ _QUICKSTART: dict = {
         "input/<fields>": "Input fields (.bin or NetCDF) — written by gen_input.py.",
         "gen_input.py": (
             "Python script that writes binary or NetCDF input fields to input/. "
+            "Requires numpy (pip install numpy) at minimum; scipy/xarray if needed. "
             "Run before docker build so fields are COPY'd into the image."
         ),
     },
@@ -107,20 +111,33 @@ _QUICKSTART: dict = {
     "dockerfile_arm64": _DOCKERFILE_ARM64,
     "dockerfile_note": (
         "Use Dockerfile.amd64 on x86-64 hosts (most cloud VMs, Linux workstations). "
-        "Use Dockerfile.arm64 on Apple Silicon or other ARM64 hosts — pass "
-        "--platform linux/arm64 to docker build."
+        "Use Dockerfile.arm64 on Apple Silicon or other ARM64 hosts."
     ),
-    "build": "docker build -t my_experiment -f Dockerfile.amd64 .",
+    "build": "docker build --platform linux/amd64 -t my_experiment -f Dockerfile.amd64 .",
+    "build_arm64": "docker build --platform linux/arm64 -t my_experiment -f Dockerfile.arm64 .",
     "run": (
         "mkdir -p output && "
         "docker run --rm -e NP=1 -v \"$(pwd)/output:/experiment/run\" my_experiment"
     ),
+    "run_with_input_mount": (
+        "mkdir -p output && "
+        "docker run --rm -e NP=1 "
+        "-v \"$(pwd)/input:/experiment/input:ro\" "
+        "-v \"$(pwd)/output:/experiment/run\" "
+        "my_experiment"
+    ),
     "notes": [
         f"Runtime image {_RUNTIME_IMAGE} includes MITgcm source at /MITgcm.",
-        "Generate input fields before docker build: python gen_input.py",
-        "Set NP to nPx*nPy from SIZE.h (ENV NP in Dockerfile or -e NP=... at run time).",
+        "Prerequisites before docker build: pip install numpy; python gen_input.py",
+        (
+            "NP=1 is the default. NP>1 requires editing nPx/nPy in code/SIZE.h and "
+            "rebuilding the image — passing -e NP=... at runtime alone does NOT work."
+        ),
         "Output lands in output/ on the host after docker run.",
-        "To change namelists: edit input/, re-run gen_input.py if needed, rebuild, re-run.",
+        (
+            "For namelist-only changes (no code changes), use run_with_input_mount "
+            "to avoid a full rebuild. Only rebuild when code/ or gen_input.py changes."
+        ),
     ],
 }
 
@@ -132,7 +149,7 @@ _CONFIGS: dict = {
             "Non-hydrostatic rotating convection on an f-plane. Surface buoyancy flux "
             "drives convection; rotation organises it into columnar structures."
         ),
-        "cpp_options": ["ALLOW_NONHYDROSTATIC", "ALLOW_DIAGNOSTICS"],
+        "cpp_options": ["ALLOW_NONHYDROSTATIC", "ALLOW_DIAGNOSTICS", "ALLOW_EXF"],
         "namelists": {
             "data": {
                 "PARM01": {
@@ -163,10 +180,21 @@ _CONFIGS: dict = {
                     "sBeta": 0.0,
                 },
             },
+            "data.exf": {
+                "EXF_NML_01": {
+                    "hflxconst": "<surface_heat_flux_W_m2>",
+                },
+            },
         },
         "notes": [
             "Set f0, viscAh/Az, diffKhT/ZT, tAlpha from translate_lab_params output.",
-            "Surface heat flux applied via data.pkg/OBCS or external forcing file.",
+            (
+                "Surface heat flux is applied via the EXF package (ALLOW_EXF in "
+                "cpp_options, useEXF=.TRUE. in data.pkg). Set hflxconst in "
+                "data.exf &EXF_NML_01 for a spatially uniform constant flux, "
+                "or set hflxFile for a binary field written by gen_input.py."
+            ),
+            "Add 'exf' to code/packages.conf alongside 'diagnostics'.",
             "Check Ek < 0.01 and aspect ratio > 0.1 via check_scales before running.",
             "Spin up to solid-body rotation before enabling heat flux.",
         ],

@@ -51,7 +51,7 @@ def _experiment_files(exp_dir: Path):
                 text = p.read_text(errors="strict")
             except (UnicodeDecodeError, PermissionError):
                 continue
-            yield f"{exp_name}/input/{p.name}", text
+            yield f"verification/{exp_name}/input/{p.name}", text
 
     # code/ — headers and packages.conf
     code_dir = exp_dir / "code"
@@ -67,7 +67,7 @@ def _experiment_files(exp_dir: Path):
                 text = p.read_text(errors="strict")
             except (UnicodeDecodeError, PermissionError):
                 continue
-            yield f"{exp_name}/code/{p.name}", text
+            yield f"verification/{exp_name}/code/{p.name}", text
 
 
 def run(chroma_path: Path = CHROMA_PATH) -> None:

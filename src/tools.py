@@ -1,10 +1,51 @@
 """Plain Python callables over the DuckDB code graph and ChromaDB semantic index."""
 
 import re
+from contextlib import contextmanager
 from pathlib import Path
 
 from src.indexer.schema import DB_PATH, connect
-from src.embedder.store import CHROMA_PATH, get_docs_collection, get_verification_collection
+from src.embedder.store import (
+    CHROMA_PATH,
+    COLLECTION_NAME,
+    DOCS_COLLECTION_NAME,
+    VERIFICATION_COLLECTION_NAME,
+    get_collection,
+)
+
+
+_HARDWARE_PLATFORM_FLAGS = frozenset({
+    "TARGET_NEC_SX",
+    "TARGET_SGI",
+    "TARGET_CRAY_VECTOR",
+    "TARGET_T3E",
+    "TARGET_ALPHA",
+})
+
+
+def _doc_snippet(doc: str) -> str:
+    """Extract a readable snippet from a stored ChromaDB document chunk.
+
+    Strips the leading ``[file] section`` header line and any leading
+    Fortran C-comment lines (lines whose first non-whitespace character is
+    ``C`` or ``c`` followed by a space or end-of-line).  This ensures that
+    .h header files return their first PARAMETER/COMMON declaration rather
+    than the opening comment block.
+    """
+    # Strip "[file] section\n" or "[file]\n" header
+    if doc.startswith("["):
+        nl = doc.find("\n")
+        if nl >= 0:
+            doc = doc[nl + 1:]
+    # Skip leading Fortran C-comment lines (column-1 'C' or 'c')
+    lines = doc.splitlines(keepends=True)
+    start = 0
+    for i, line in enumerate(lines):
+        stripped = line.lstrip()
+        if stripped and not (stripped[0] in "Cc" and (len(stripped) == 1 or stripped[1] in " \t\n\r")):
+            start = i
+            break
+    return ("".join(lines[start:]))[:400]
 
 
 def _normalize_query(query: str) -> str:
@@ -25,14 +66,27 @@ def _normalize_query(query: str) -> str:
     return result
 
 
+@contextmanager
+def _db(db_path: Path):
+    """Context manager that opens a DuckDB connection and ensures it is closed."""
+    con = connect(db_path)
+    try:
+        yield con
+    finally:
+        con.close()
+
+
+def _embed(query: str) -> list[float]:
+    """Embed a query string using the nomic-embed-text model via Ollama."""
+    import ollama
+    response = ollama.embed(model="nomic-embed-text", input=_normalize_query(query))
+    return response.embeddings[0]
+
+
 def search_code(query: str, top_k: int = 5, _db_path: Path = DB_PATH, _chroma_path: Path = CHROMA_PATH) -> list[dict]:
     """Semantic search over subroutine embeddings; returns top_k subroutines with DuckDB metadata."""
-    import ollama
-    from src.embedder.store import get_collection
-
-    collection = get_collection(_chroma_path)
-    response = ollama.embed(model="nomic-embed-text", input=_normalize_query(query))
-    embedding = response.embeddings[0]
+    collection = get_collection(COLLECTION_NAME, _chroma_path)
+    embedding = _embed(query)
 
     results = collection.query(
         query_embeddings=[embedding],
@@ -54,15 +108,12 @@ def search_code(query: str, top_k: int = 5, _db_path: Path = DB_PATH, _chroma_pa
     if not db_ids:
         return []
 
-    con = connect(_db_path)
-    try:
+    with _db(_db_path) as con:
         placeholders = ", ".join("?" for _ in db_ids)
         rows = con.execute(
             f"SELECT id, name, file, package, line_start, line_end FROM subroutines WHERE id IN ({placeholders})",
             db_ids,
         ).fetchall()
-    finally:
-        con.close()
 
     id_to_row = {r[0]: r for r in rows}
     out = []
@@ -83,14 +134,11 @@ def find_subroutines(name: str, _db_path: Path = DB_PATH) -> list[dict]:
     which packages contain it before calling get_subroutine or get_source_tool
     with package=.
     """
-    con = connect(_db_path)
-    try:
+    with _db(_db_path) as con:
         rows = con.execute(
             "SELECT id, name, file, package, line_start, line_end FROM subroutines WHERE upper(name) = upper(?)",
             [name],
         ).fetchall()
-    finally:
-        con.close()
 
     return [{"id": r[0], "name": r[1], "file": r[2], "package": r[3], "line_start": r[4], "line_end": r[5]} for r in rows]
 
@@ -104,8 +152,7 @@ def get_subroutine(name: str, package: str | None = None, _db_path: Path = DB_PA
     ValueError listing the packages; call find_subroutines() first to discover
     which packages contain the name.
     """
-    con = connect(_db_path)
-    try:
+    with _db(_db_path) as con:
         if package is not None:
             rows = con.execute(
                 "SELECT id, name, file, package, line_start, line_end, source_text FROM subroutines WHERE upper(name) = upper(?) AND upper(package) = upper(?)",
@@ -116,8 +163,6 @@ def get_subroutine(name: str, package: str | None = None, _db_path: Path = DB_PA
                 "SELECT id, name, file, package, line_start, line_end, source_text FROM subroutines WHERE upper(name) = upper(?)",
                 [name],
             ).fetchall()
-    finally:
-        con.close()
 
     if not rows:
         return None
@@ -138,8 +183,7 @@ def get_callers(name: str, package: str | None = None, _db_path: Path = DB_PATH)
     that package (i.e. subroutines within the package that call the named
     subroutine).
     """
-    con = connect(_db_path)
-    try:
+    with _db(_db_path) as con:
         if package is not None:
             rows = con.execute(
                 """
@@ -161,8 +205,6 @@ def get_callers(name: str, package: str | None = None, _db_path: Path = DB_PATH)
                 """,
                 [name],
             ).fetchall()
-    finally:
-        con.close()
 
     return [{"id": r[0], "name": r[1], "file": r[2], "package": r[3], "line_start": r[4], "line_end": r[5]} for r in rows]
 
@@ -173,8 +215,7 @@ def get_callees(name: str, package: str | None = None, _db_path: Path = DB_PATH)
     When package is provided, restricts the lookup to the copy of the
     subroutine in that package, returning only its callees.
     """
-    con = connect(_db_path)
-    try:
+    with _db(_db_path) as con:
         if package is not None:
             rows = con.execute(
                 """
@@ -196,16 +237,13 @@ def get_callees(name: str, package: str | None = None, _db_path: Path = DB_PATH)
                 """,
                 [name],
             ).fetchall()
-    finally:
-        con.close()
 
     return [{"callee_name": r[0]} for r in rows]
 
 
 def namelist_to_code(param: str, _db_path: Path = DB_PATH) -> list[dict]:
     """Return subroutines that reference a namelist parameter."""
-    con = connect(_db_path)
-    try:
+    with _db(_db_path) as con:
         rows = con.execute(
             """
             SELECT s.id, s.name, s.file, s.package, nr.namelist_group
@@ -215,16 +253,13 @@ def namelist_to_code(param: str, _db_path: Path = DB_PATH) -> list[dict]:
             """,
             [param],
         ).fetchall()
-    finally:
-        con.close()
 
     return [{"id": r[0], "name": r[1], "file": r[2], "package": r[3], "namelist_group": r[4]} for r in rows]
 
 
 def diagnostics_fill_to_source(field_name: str, _db_path: Path = DB_PATH) -> list[dict]:
     """Return subroutines that fill a diagnostics field (trims trailing spaces before comparing)."""
-    con = connect(_db_path)
-    try:
+    with _db(_db_path) as con:
         rows = con.execute(
             """
             SELECT s.id, s.name, s.file, s.package, df.array_name
@@ -234,16 +269,18 @@ def diagnostics_fill_to_source(field_name: str, _db_path: Path = DB_PATH) -> lis
             """,
             [field_name],
         ).fetchall()
-    finally:
-        con.close()
 
     return [{"id": r[0], "name": r[1], "file": r[2], "package": r[3], "array_name": r[4]} for r in rows]
 
 
 def get_cpp_requirements(subroutine_name: str, _db_path: Path = DB_PATH) -> list[str]:
-    """Return CPP flags that guard a subroutine."""
-    con = connect(_db_path)
-    try:
+    """Return CPP flags that guard a subroutine.
+
+    Known hardware-platform flags (TARGET_NEC_SX, TARGET_SGI,
+    TARGET_CRAY_VECTOR, etc.) are excluded — they guard vendor-specific
+    optimisations irrelevant to modern builds.
+    """
+    with _db(_db_path) as con:
         rows = con.execute(
             """
             SELECT cg.cpp_flag
@@ -253,22 +290,17 @@ def get_cpp_requirements(subroutine_name: str, _db_path: Path = DB_PATH) -> list
             """,
             [subroutine_name],
         ).fetchall()
-    finally:
-        con.close()
 
-    return [r[0] for r in rows]
+    return [r[0] for r in rows if r[0] not in _HARDWARE_PLATFORM_FLAGS]
 
 
 def get_package_flags(package_name: str, _db_path: Path = DB_PATH) -> list[dict]:
     """Return CPP flags defined by a package."""
-    con = connect(_db_path)
-    try:
+    with _db(_db_path) as con:
         rows = con.execute(
             "SELECT cpp_flag, description FROM package_options WHERE upper(package_name) = upper(?)",
             [package_name],
         ).fetchall()
-    finally:
-        con.close()
 
     return [{"cpp_flag": r[0], "description": r[1]} for r in rows]
 
@@ -290,7 +322,7 @@ def get_doc_source(
     """
     from .embedder.pipeline import OVERLAP
 
-    collection = get_docs_collection(_chroma_path)
+    collection = get_collection(DOCS_COLLECTION_NAME, _chroma_path)
     results = collection.get(
         where={"$and": [{"file": {"$eq": file}}, {"section": {"$eq": section}}]},
         include=["metadatas", "documents"],
@@ -346,15 +378,13 @@ def search_verification(query: str, top_k: int = 5, _chroma_path: Path = CHROMA_
     verification experiments.  Returns up to top_k results, deduplicated
     per (experiment, filename).
 
-    Each result has: experiment, file, filename, snippet (first 400 chars).
+    Each result has: experiment, file, filename, snippet (first 400 chars
+    of content after stripping the header and leading Fortran C-comments).
     Requires Ollama and a populated mitgcm_verification ChromaDB collection
     (pixi run embed-verification).
     """
-    import ollama
-
-    collection = get_verification_collection(_chroma_path)
-    response = ollama.embed(model="nomic-embed-text", input=_normalize_query(query))
-    embedding = response.embeddings[0]
+    collection = get_collection(VERIFICATION_COLLECTION_NAME, _chroma_path)
+    embedding = _embed(query)
 
     results = collection.query(
         query_embeddings=[embedding],
@@ -377,7 +407,7 @@ def search_verification(query: str, top_k: int = 5, _chroma_path: Path = CHROMA_
             "experiment": meta["experiment"],
             "file": meta["file"],
             "filename": meta["filename"],
-            "snippet": doc[:400],
+            "snippet": _doc_snippet(doc),
         }
         for _, meta, doc in ranked
     ]
@@ -390,13 +420,11 @@ def search_docs(query: str, top_k: int = 5, _chroma_path: Path = CHROMA_PATH) ->
     natural-language query.  Requires a running Ollama server and a populated
     mitgcm_docs ChromaDB collection (pixi run embed-docs).
 
-    Each result has keys: file, section, snippet (first 400 chars of text).
+    Each result has keys: file, section, snippet (first 400 chars of content
+    after stripping the header and leading Fortran C-comments).
     """
-    import ollama
-
-    collection = get_docs_collection(_chroma_path)
-    response = ollama.embed(model="nomic-embed-text", input=_normalize_query(query))
-    embedding = response.embeddings[0]
+    collection = get_collection(DOCS_COLLECTION_NAME, _chroma_path)
+    embedding = _embed(query)
 
     results = collection.query(
         query_embeddings=[embedding],
@@ -418,7 +446,7 @@ def search_docs(query: str, top_k: int = 5, _chroma_path: Path = CHROMA_PATH) ->
         {
             "file": meta["file"],
             "section": meta["section"],
-            "snippet": doc[:400],
+            "snippet": _doc_snippet(doc),
         }
         for _, meta, doc in ranked
     ]
