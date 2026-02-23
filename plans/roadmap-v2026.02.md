@@ -170,7 +170,7 @@ Fortran namelist. Catches silent formatting errors.
 
 ---
 
-## Pre-release test fixes (from 2026-02-23 test session)
+## Tier 4 — Pre-release fixes (from 2026-02-23 test session)
 
 Test session against local `mitgcm-mcp:latest` image. Full report in
 `plans/test-sessions/2026-02-23-v2026.02.5-pre-release-test-report.md`.
@@ -201,20 +201,20 @@ Test session against local `mitgcm-mcp:latest` image. Full report in
 - [ ] PHIHYD gotcha verification: agent did not find the
   `INCLUDE_PHIHYD_CALCULATION_CODE` check in the sections of CONFIG_CHECK
   read. Verify at higher offset before releasing the gotcha entry.
-- [ ] Tier 4 HIGH items: 4.1 (NP>1 note), 4.2 (input volume mount),
-  4.5 (surface forcing) — see Tier 4 for detail
+- [ ] Tier 5 HIGH items: 5.1 (NP>1 note), 5.2 (input volume mount),
+  5.5 (surface forcing) — see Tier 5 for detail
 - [ ] Rebuild `mitgcm-mcp:latest` with all above fixes
 - [ ] Re-run failing test sections (T3, T6) — full pass required
 
 ---
 
-## Tier 4 — Quickstart template and workflow fixes
+## Tier 5 — Quickstart template and workflow fixes
 
 From 2026-02-23 docker-focused review
 (`plans/test-sessions/2026-02-23-v2026.02.5-pre-release-test-docker-focused.md`).
-HIGH items are also listed as v2026.02.5 blockers in the pre-release section above.
+HIGH items are also listed as v2026.02.5 blockers in the Tier 4 section above.
 
-### 4.1 NP>1 requires SIZE.h rebuild — misleading runtime note (HIGH)
+### 5.1 NP>1 requires SIZE.h rebuild — misleading runtime note (HIGH)
 
 `suggest_experiment_config_tool` notes say "Set NP to nPx\*nPy … or
 `-e NP=…` at run time." Passing `-e NP=4` to `docker run` only changes what
@@ -225,7 +225,7 @@ wrong results. `nPx`/`nPy` are compile-time constants in `SIZE.h`.
   `code/SIZE.h` and rebuilding the image
 - [ ] Update tests
 
-### 4.2 Stage 2 iteration requires full rebuild — input volume mount missing (HIGH)
+### 5.2 Stage 2 iteration requires full rebuild — input volume mount missing (HIGH)
 
 `input/` is `COPY`d into the image during the `RUN make` layer. Changing
 `nTimeSteps` in `input/data` triggers a full genmake2+make rebuild (~10 min).
@@ -239,7 +239,7 @@ changes; this pattern is never mentioned.
   changes (require rebuild)
 - [ ] Update tests
 
-### 4.3 `build` key hardcodes amd64 unconditionally (MEDIUM)
+### 5.3 `build` key hardcodes amd64 unconditionally (MEDIUM)
 
 The top-level `build` instruction uses `-f Dockerfile.amd64` with no
 `--platform` flag. On an M-series Mac this builds under Rosetta or emulation
@@ -250,7 +250,7 @@ with no warning. The arm64 instruction is buried in `dockerfile_note`.
 - [ ] Make the arm64 `build` instruction equally prominent
 - [ ] Update tests
 
-### 4.4 gen_input.py Python dependencies not addressed (MEDIUM)
+### 5.4 gen_input.py Python dependencies not addressed (MEDIUM)
 
 Quickstart notes say "Generate input fields before docker build:
 `python gen_input.py`" without mentioning that `gen_input.py` imports numpy
@@ -260,7 +260,7 @@ Quickstart notes say "Generate input fields before docker build:
 - [ ] Add a prerequisite note listing required Python packages (`numpy` at
   minimum) in the quickstart in `src/domain/suggest.py`
 
-### 4.5 Surface forcing absent from rotating-convection template (HIGH)
+### 5.5 Surface forcing absent from rotating-convection template (HIGH)
 
 Template `cpp_options` has only `["ALLOW_NONHYDROSTATIC", "ALLOW_DIAGNOSTICS"]`
 — no `ALLOW_EXF`. Namelists cover `PARM01/03` and `data.eos` only — no
@@ -277,21 +277,21 @@ wrong (OBCS is lateral open boundaries for regional models, not surface flux).
 - [ ] Remove / correct the wrong "data.pkg/OBCS" attribution in the notes
 - [ ] Update tests
 
-### 4.6 STDOUT.0000 location not tied to Docker volume mount (MEDIUM)
+### 5.6 STDOUT.0000 location not tied to Docker volume mount (MEDIUM)
 
 `validate_incrementally` Stage 3 says "Check STDOUT.0000" but never states
 it lands at `output/STDOUT.0000` on the host with the quickstart volume mount.
 
 - [ ] Add explicit path note to Stage 3 in `src/domain/workflow.py`
 
-### 4.7 WORKDIR + CMD mkdir redundancy (LOW)
+### 5.7 WORKDIR + CMD mkdir redundancy (LOW)
 
 `WORKDIR /experiment/run` creates the directory at build time. The
 `CMD mkdir -p /experiment/run && …` is a no-op in the normal case.
 
 - [ ] Remove the redundant `mkdir -p` from the CMD in `src/domain/suggest.py`
 
-### 4.8 `ln -sf input/* .` silent failure on empty input/ (LOW)
+### 5.8 `ln -sf input/* .` silent failure on empty input/ (LOW)
 
 Shell glob in CMD fails with "No such file or directory" if `input/` is
 empty (e.g. `gen_input.py` was not run before `docker build`).
@@ -299,7 +299,7 @@ empty (e.g. `gen_input.py` was not run before `docker build`).
 - [ ] Guard the symlink step or emit a clear error when `input/` is empty
 - [ ] Update template in `src/domain/suggest.py`
 
-### 4.9 Stage 4 uses dot-notation for a flat key (LOW)
+### 5.9 Stage 4 uses dot-notation for a flat key (LOW)
 
 `validate_incrementally` Stage 4 references `"quickstart.run"` but the
 actual key in the `suggest_experiment_config_tool` response is `quickstart`
@@ -307,7 +307,7 @@ actual key in the `suggest_experiment_config_tool` response is `quickstart`
 
 - [ ] Fix the Stage 4 note in `src/domain/workflow.py`
 
-### 4.10 data.diagnostics pointer (carried, fixed in v2026.02.5)
+### 5.10 data.diagnostics pointer (carried, fixed in v2026.02.5)
 
 Template listed `input/data.diagnostics` but `get_namelist_structure_tool`
 had no entry for it. Fixed by adding `data.diagnostics` to `_EXPLICIT`.
@@ -316,12 +316,12 @@ had no entry for it. Fixed by adding `data.diagnostics` to `_EXPLICIT`.
 
 ---
 
-## Tier 5 — Slipped items from pre-release testing
+## Tier 6 — Slipped items from pre-release testing
 
 Items identified during v2026.02.5 pre-release testing, not blocking the
 v2026.02.5 tag but deferred.
 
-### 5.1 `.h` snippet quality
+### 6.1 `.h` snippet quality
 
 `search_docs_tool` results for `.h` files show only the opening Fortran
 comment block in the snippet; actual PARAMETER/COMMON declarations start
@@ -333,7 +333,7 @@ for full content (D6). The fix is query-time (no re-embedding): strip the
 - [ ] Fix snippet generation in `search_docs` and `search_verification`
 - [ ] Update tests
 
-### 5.2 `get_cpp_requirements_tool` returns hardware-optimisation flags
+### 6.2 `get_cpp_requirements_tool` returns hardware-optimisation flags
 
 `get_cpp_requirements_tool("CG3D")` returns `TARGET_NEC_SX` — a 1990s NEC
 SX vector-machine flag irrelevant to any modern build. The tool reports all
@@ -348,11 +348,11 @@ subroutine entry point.
 
 ---
 
-## Tier 6 — Code quality
+## Tier 7 — Code quality
 
 From 2026-02-23 code review.
 
-### 6.1 Database connection boilerplate
+### 7.1 Database connection boilerplate
 
 8 functions in `src/tools.py` repeat the same `con = connect(); try: …
 finally: con.close()` pattern (~120 LoC of ceremony). Extract a
@@ -362,7 +362,7 @@ finally: con.close()` pattern (~120 LoC of ceremony). Extract a
 - [ ] Apply to all 8 query functions
 - [ ] Verify tests still pass
 
-### 6.2 ChromaDB accessor deduplication
+### 7.2 ChromaDB accessor deduplication
 
 `src/embedder/store.py` has three near-identical `get_*_collection()`
 functions. Collapse to `get_collection(name: str, path: Path) ->
@@ -371,7 +371,7 @@ chromadb.Collection`.
 - [ ] Refactor to single accessor
 - [ ] Update all call sites in `src/tools.py`
 
-### 6.3 Ollama embed call extraction
+### 7.3 Ollama embed call extraction
 
 Model name `"nomic-embed-text"` and `_normalize_query()` are repeated at
 three call sites in `src/tools.py`. Extract to
@@ -380,7 +380,7 @@ three call sites in `src/tools.py`. Extract to
 - [ ] Extract helper
 - [ ] Apply to `search_code`, `search_docs`, `search_verification`
 
-### 6.4 Positional column indexing in SQL results
+### 7.4 Positional column indexing in SQL results
 
 8 query functions in `src/tools.py` use `r[0], r[1], r[2]` positional
 indexing on DuckDB result rows. Brittle on schema changes. Switch to named
@@ -391,9 +391,9 @@ tuples or row factory.
 
 ---
 
-## Tier 7 — Gotcha catalogue and docs additions
+## Tier 8 — Gotcha catalogue and docs additions
 
-### 7.1 Adams-Bashforth 3 maximum-stability coefficient
+### 8.1 Adams-Bashforth 3 maximum-stability coefficient
 
 The `β = 0.281105` optimum (CFL stability limit 0.786 vs 0.724 for
 standard AB-3) is documented only in source comments in `ADAMS_BASHFORTH3`.
@@ -402,7 +402,7 @@ Users trying to push timestep size have no way to find it.
 - [ ] Add note to gotcha catalogue or `docs/mcp-server.md`
 - [ ] Both `alph_AB` and `beta_AB` confirmed as PARM03 parameters
 
-### 7.2 CD scheme search gap
+### 8.2 CD scheme search gap
 
 `search_docs_tool("CD scheme Coriolis Crank Nicolson momentum")` returns
 Adams-Bashforth sections, not CD scheme docs. The `cd_code` package is not
@@ -413,7 +413,7 @@ surfaced under user-facing search terms.
 - [ ] If gap is in indexing: no action needed (add to known limitations)
 - [ ] If gap is in search terms: add a cross-reference in relevant docs
 
-### 7.3 `showflops` and unregistered package flags
+### 8.3 `showflops` and unregistered package flags
 
 `get_package_flags_tool("showflops")` returns empty because the package's
 CPP flags are not registered in the standard options file. Affects any
@@ -424,11 +424,11 @@ package that uses non-standard flag registration.
 
 ---
 
-## Tier 8 — Docker hardening
+## Tier 9 — Docker hardening
 
 From 2026-02-23 security review (grade A — no vulnerabilities, hardening only).
 
-### 8.1 Non-root user in MCP image
+### 9.1 Non-root user in MCP image
 
 Container currently runs as root. Add a dedicated non-root user.
 
@@ -443,7 +443,7 @@ Container currently runs as root. Add a dedicated non-root user.
 
 - [x] All tier 1–3 items done
 - [x] `pixi run test` passes (341 tests)
-- [ ] Pre-release fixes (D5, EXACT_CONSERV, PHIHYD, Tier 4 HIGH items)
+- [ ] Tier 4 done (D5, EXACT_CONSERV, PHIHYD, Tier 5 HIGH items)
 - [ ] `pixi run embed-verification` run and data baked into image
 - [ ] Both images built and pushed (`mcp-v2026.02.5`, `runtime-v2026.02.5`)
 - [ ] GitHub release created
