@@ -1,0 +1,27 @@
+&oce_dyn
+! --- Basic ---
+C_d         = 0.001            ! bottom drag coefficient (neverworld2 uses low drag)
+A_ver       = 1.e-4            ! background vertical viscosity [m²/s]
+scale_area  = 5.8e9            ! reference element area for viscosity scaling [m²]
+
+! --- GM (off for neverworld2) ---
+SPP         = .false.
+Fer_GM      = .false.
+Redi        = .false.
+scaling_resolution = .true.
+scaling_ODM95      = .true.
+ODM95_Scr   = 0.2e-2
+ODM95_Sd    = 1.0e-3
+
+! --- Mixing ---
+mix_scheme  = 'TOY'            ! toy mixing scheme (simple vertical diffusion)
+visc_sh_limit = 5.0e-3
+Ricr        = 0.3
+concv       = 1.6
+
+! --- EOS ---
+state_equation = 0             ! linear EOS (only temperature drives buoyancy)
+
+! --- Tides ---
+use_global_tides = .false.
+/

@@ -1,0 +1,74 @@
+! CVMix parameterisations — not used for this experiment (mix_scheme = 'TOY').
+! FESOM2 opens this file unconditionally at startup; contents are not read
+! when mix_scheme is 'TOY'.
+
+&param_tke
+tke_c_k        = 0.1
+tke_c_eps      = 0.7
+tke_alpha      = 30.0
+tke_mxl_min    = 1.0e-8
+tke_mxl_choice = 2
+tke_kappaM_min = 0.0
+tke_kappaM_max = 100.0
+tke_cd         = 3.75
+tke_surf_min   = 1.0e-4
+tke_min        = 1.0e-6
+tke_dolangmuir = .false.
+/
+
+&param_idemix
+idemix_tau_v                  = 172800.0
+idemix_tau_h                  = 1296000.0
+idemix_gamma                  = 1.570
+idemix_jstar                  = 5.0
+idemix_mu0                    = 0.33333333
+idemix_sforcusage             = 0.2
+idemix_n_hor_iwe_prop_iter    = 5
+idemix_surforc_file           = ''
+idemix_surforc_vname          = 'var706'
+idemix_botforc_file           = ''
+idemix_botforc_vname          = ''
+/
+
+&param_pp
+pp_use_fesompp     = .true.
+pp_Av0             = 0.01
+pp_alpha           = 5.0
+pp_exp             = 2.0
+pp_Avbckg          = 1.0e-4
+pp_Kvbckg          = 1.0e-5
+pp_use_nonconstKvb = .true.
+/
+
+&param_kpp
+kpp_use_fesomkpp      = .false.
+kpp_use_enhanceKv     = .true.
+kpp_use_compEkman     = .true.
+kpp_use_monob         = .true.
+kpp_interptype_ri     = "linear"
+kpp_interptype_atobl  = "LMD94"
+kpp_matchtechc        = "ParabolicNonLocal"
+kpp_internalmix       = "KPP"
+kpp_pp_Av0            = 0.01
+kpp_Av0               = 5.0e-3
+kpp_Kv0               = 5.0e-3
+kpp_Ri0               = 0.7
+kpp_use_nonconstKvb   = .true.
+kpp_Avbckg            = 1.0e-4
+kpp_Kvbckg            = 1.0e-5
+kpp_reduce_tauuice    = .false.
+kpp_use_StokesMOST    = .false.
+kpp_A_stokes          = 0.005
+kpp_langmuir_mixing   = "NONE"
+kpp_langmuir_entrainment = "NONE"
+/
+
+&param_tidal
+tidal_mixscheme      = "Simmons"
+tidal_efficiency     = 0.2
+tidal_lcl_mixfrac    = 0.33
+tidal_vert_decayscale = 500.0
+tidal_max_coeff      = 50e-4
+tidal_depth_cutoff   = 0.0
+tidal_botforc_file   = ''
+/

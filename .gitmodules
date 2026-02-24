@@ -4,3 +4,6 @@
 [submodule "FESOM2"]
 	path = FESOM2
 	url = https://github.com/FESOM/fesom2.git
+[submodule "mkfesom"]
+	path = mkfesom
+	url = https://github.com/FESOM/mkfesom.git

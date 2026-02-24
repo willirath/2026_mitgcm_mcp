@@ -1,0 +1,51 @@
+&tracer_listsize
+num_tracers = 100
+/
+
+&tracer_list
+nml_tracer_list =
+1  , 'MFCT', 'QR4C', 'FCT ', 0., 1.,   ! temperature
+2  , 'MFCT', 'QR4C', 'FCT ', 0., 1.,   ! salinity (passive tracer with linear EOS)
+/
+
+! Toy runs: initial T/S set by initial_state_neverworld2() Fortran routine,
+! not from files. ClimateDataPath is /dev/null; no file reads happen.
+&tracer_init3d
+n_ic3d   = 0
+idlist   = 1, 2
+filelist = '', ''
+varlist  = '', ''
+t_insitu = .false.
+/
+
+&tracer_init2d
+n_ic2d            = 0
+idlist            = 1, 2, 3
+filelist          = '', '', ''
+varlist           = '', '', ''
+ini_ice_from_file = .false.
+/
+
+&tracer_general
+smooth_bh_tra = .false.
+gamma0_tra    = 0.0005
+gamma1_tra    = 0.0125
+gamma2_tra    = 0.
+i_vert_diff   = .true.
+AB_order      = 2
+/
+
+&tracer_phys
+use_momix        = .false.
+use_instabmix    = .true.
+instabmix_kv     = 0.1
+use_windmix      = .false.
+K_ver            = 1.0e-5
+K_hor            = 0.              ! no explicit horizontal diffusivity
+surf_relax_T     = 0.0
+surf_relax_S     = 0.0             ! no restoring in toy run
+balance_salt_water = .false.
+clim_relax       = 0.0
+ref_sss_local    = .true.
+ref_sss          = 34.
+/

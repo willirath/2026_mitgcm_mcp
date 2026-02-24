@@ -21,11 +21,13 @@ build-image    = "docker build --platform linux/amd64,linux/arm64 -t mitgcm:late
 build-mcp-image = "docker build --platform linux/amd64 -t mitgcm-mcp:latest -f docker/mcp/Dockerfile ."
 build-fesom2-image = "docker build --platform linux/amd64,linux/arm64 -t fesom2:latest -f docker/fesom2/Dockerfile ."
 setup-tutorial = "bash scripts/setup-tutorial.sh"
-build-tutorial = "bash scripts/build-experiment.sh experiments/tutorial_rotating_tank"
-run-tutorial   = "bash scripts/run-experiment.sh experiments/tutorial_rotating_tank"
-gen-rotating-convection   = "python experiments/rotating_convection/gen.py"
-build-rotating-convection = "bash scripts/build-experiment.sh experiments/rotating_convection"
-run-rotating-convection   = "bash scripts/run-experiment.sh experiments/rotating_convection"
+build-tutorial = "bash scripts/build-experiment.sh experiments/mitgcm/tutorial_rotating_tank"
+run-tutorial   = "bash scripts/run-experiment.sh experiments/mitgcm/tutorial_rotating_tank"
+gen-rotating-convection   = "python experiments/mitgcm/rotating_convection/gen.py"
+build-rotating-convection = "bash scripts/build-experiment.sh experiments/mitgcm/rotating_convection"
+run-rotating-convection   = "bash scripts/run-experiment.sh experiments/mitgcm/rotating_convection"
+run-fesom2-toy-neverworld2  = "bash experiments/fesom2/toy_neverworld2/run.sh"
+plot-fesom2-toy-neverworld2 = "python experiments/fesom2/toy_neverworld2/plot.py"
 
 [dependencies]
 python = "3.13.*"
