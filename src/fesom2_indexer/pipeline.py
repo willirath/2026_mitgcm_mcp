@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .extract import extract_file
+from .namelist_config import parse_all_config_files
 from .schema import connect
 
 FESOM2_ROOT = Path("FESOM2")
@@ -103,6 +104,29 @@ def run(db_path: Path | None = None) -> None:
         if mods or subs:
             rel = path.relative_to(FESOM2_ROOT)
             print(f"  {rel}: {len(mods)} module(s), {len(subs)} subroutine(s)")
+
+    # --- Namelist refs: from source namelist /group/ declarations ---
+    nml_ref_count = 0
+    for path in files:
+        mods, _ = extract_file(path)
+        for mod in mods:
+            for group, params, line in mod.namelist_groups:
+                for param in params:
+                    con.execute(
+                        "INSERT INTO namelist_refs VALUES (?, ?, ?, ?, ?)",
+                        [param, group, mod.file, mod.name, line],
+                    )
+                    nml_ref_count += 1
+    print(f"Indexed {nml_ref_count} namelist parameter references from source")
+
+    # --- Namelist descriptions: from config/namelist.* files ---
+    desc_rows = parse_all_config_files()
+    for config_file, group, param, desc in desc_rows:
+        con.execute(
+            "INSERT INTO namelist_descriptions VALUES (?, ?, ?, ?)",
+            [param, group, config_file, desc],
+        )
+    print(f"Indexed {len(desc_rows)} namelist parameter descriptions from config files")
 
     con.close()
     print(f"\nDone. Indexed {mod_id - 1} modules, {sub_id - 1} subroutines.")

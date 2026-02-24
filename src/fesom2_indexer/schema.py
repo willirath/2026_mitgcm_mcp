@@ -42,13 +42,21 @@ CREATE TABLE IF NOT EXISTS calls (
     callee_name   TEXT
 );
 
--- Namelist parameter references (populated by Tier 2)
+-- Namelist declarations from source: which module declares each group/param
 CREATE TABLE IF NOT EXISTS namelist_refs (
     param_name     TEXT,
     namelist_group TEXT,
     file           TEXT,
     module_name    TEXT,
     line           INTEGER
+);
+
+-- Namelist parameter descriptions from config/namelist.* files
+CREATE TABLE IF NOT EXISTS namelist_descriptions (
+    param_name     TEXT,
+    namelist_group TEXT,
+    config_file    TEXT,
+    description    TEXT
 );
 """
 

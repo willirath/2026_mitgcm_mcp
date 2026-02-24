@@ -302,12 +302,12 @@ _Feedback:_
 
 ### Tier 2 — Namelist → code linker
 
-- [ ] Parse `config/namelist.*`: groups → parameters → inline comments
-- [ ] Detect `NAMELIST / <group> / ...` declarations in source
-- [ ] Link parameters to reading modules → DuckDB `namelist_params` table
-- [ ] Build `get_namelist_structure_tool` response from DuckDB
-- [ ] Tests: synthetic namelist + F90 fixture
-- Done when: `namelist_to_code_tool("step_per_day")` returns `gen_modules_config`
+- [x] Parse `config/namelist.*`: groups → parameters → inline comments
+- [x] Detect `NAMELIST / <group> / ...` declarations in source
+- [x] Link parameters to reading modules → DuckDB `namelist_refs` table
+- [x] `namelist_descriptions` table from config files (460 refs, 405 descriptions)
+- [x] Tests: synthetic namelist + F90 fixture (16 new tests)
+- Done when: `namelist_to_code_tool("step_per_day")` returns `g_config` ✓
 
 _Feedback:_
 

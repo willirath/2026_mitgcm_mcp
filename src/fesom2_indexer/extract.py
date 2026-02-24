@@ -26,6 +26,8 @@ class ModuleRecord:
     start_line: int
     end_line: int
     uses: list[str] = field(default_factory=list)
+    # (group_name, [param_names], line_number) — from namelist /group/ declarations
+    namelist_groups: list[tuple[str, list[str], int]] = field(default_factory=list)
 
 
 @dataclass
@@ -73,6 +75,9 @@ RE_USE = re.compile(
     r'^\s*USE\s+(?:,\s*\w+\s*::\s*)?(\w+)', re.IGNORECASE
 )
 RE_CALL = re.compile(r'\bCALL\s+(\w+)', re.IGNORECASE)
+
+# namelist /group/ param1, param2, ... (at module scope)
+RE_NAMELIST_DECL = re.compile(r'\bNAMELIST\s*/(\w+)/', re.IGNORECASE)
 
 # pFUnit macro lines
 RE_PFUNIT = re.compile(r'^\s*@')
@@ -134,6 +139,30 @@ def _extract_calls(lines: list[str], start: int, end: int, self_name: str) -> li
     return list(seen)
 
 
+def _parse_namelist_decl(lines: list[str], start: int) -> tuple[str, list[str], int]:
+    """Parse a 'namelist /group/ param1, param2, ...' declaration at line `start`.
+
+    Joins free-form continuation lines (ending with &).
+    Returns (group_name, [param_names], last_line_index).
+    """
+    first = lines[start]
+    m = RE_NAMELIST_DECL.search(first)
+    if not m:
+        return '', [], start
+    group = m.group(1)
+    text = first[m.end():]
+    i = start + 1
+    while i < len(lines):
+        prev = text.rstrip()
+        if prev.endswith('&'):
+            text = prev[:-1] + ' ' + lines[i].lstrip().lstrip('&')
+            i += 1
+        else:
+            break
+    params = [p.strip() for p in re.split(r'[,\s&]+', text) if re.match(r'^\w+$', p.strip())]
+    return group, params, i - 1
+
+
 def _extract_uses(lines: list[str], start: int, end: int) -> list[str]:
     """Collect unique USE targets within lines[start:end+1]."""
     seen: dict[str, None] = {}
@@ -171,6 +200,7 @@ def extract_file(path: Path) -> tuple[list[ModuleRecord], list[SubroutineRecord]
             mod_name = m.group(1)
             mod_start = i
             mod_uses: list[str] = []
+            mod_nml_groups: list[tuple[str, list[str], int]] = []
             i += 1
 
             # Walk module body until END MODULE
@@ -185,6 +215,7 @@ def extract_file(path: Path) -> tuple[list[ModuleRecord], list[SubroutineRecord]
                         start_line=mod_start + 1,
                         end_line=i + 1,
                         uses=list(dict.fromkeys(mod_uses)),
+                        namelist_groups=mod_nml_groups,
                     ))
                     i += 1
                     break
@@ -195,6 +226,14 @@ def extract_file(path: Path) -> tuple[list[ModuleRecord], list[SubroutineRecord]
                     used = mu.group(1)
                     mod_uses.append(used)
                     i += 1
+                    continue
+
+                # namelist /group/ declarations at module scope
+                if RE_NAMELIST_DECL.search(l):
+                    group, params, last = _parse_namelist_decl(lines, i)
+                    if group:
+                        mod_nml_groups.append((group, params, i + 1))  # 1-indexed line
+                    i = last + 1
                     continue
 
                 # Subroutine / function inside module
