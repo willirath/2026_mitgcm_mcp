@@ -7,8 +7,6 @@ Run as:
 import logging
 from pathlib import Path
 
-import ollama
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
@@ -18,7 +16,7 @@ log = logging.getLogger(__name__)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
-from ..embedder.pipeline import _chunk_text, EMBED_MODEL, BATCH_SIZE, MAX_CHARS, OVERLAP
+from ..embedder.pipeline import _chunk_text, BATCH_SIZE, MAX_CHARS, OVERLAP
 from ..docs_indexer.parse import iter_sections
 from .pipeline import _embed_with_retry
 from .store import CHROMA_PATH, get_docs_collection
