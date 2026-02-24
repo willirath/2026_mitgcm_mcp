@@ -221,9 +221,10 @@ def test_toplevel_subroutine_detected():
     assert len(subs) == 1
     assert subs[0].name == "standalone"
 
-def test_toplevel_module_name_is_empty():
-    _, subs = extract_file(_write(TOPLEVEL))
-    assert subs[0].module_name == ""
+def test_toplevel_module_name_is_file_stem():
+    path = _write(TOPLEVEL)
+    _, subs = extract_file(path)
+    assert subs[0].module_name == path.stem
 
 
 # ---------------------------------------------------------------------------

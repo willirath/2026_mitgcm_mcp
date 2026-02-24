@@ -1,6 +1,6 @@
 """Tests for src/fesom2/server.py — tool registration and names."""
 
-from src.fesom2.server import mcp
+from src.fesom2.server import mcp, list_setups_tool
 
 EXPECTED_TOOLS = {
     # Code navigation
@@ -63,3 +63,21 @@ def test_all_tools_have_descriptions():
         assert tool.description and tool.description.strip(), (
             f"Tool {tool.name!r} has an empty description"
         )
+
+
+def test_list_setups_names_only_strips_namelists():
+    records = list_setups_tool(names_only=True)
+    assert len(records) >= 1
+    for r in records:
+        assert "name" in r
+        assert "source" in r
+        assert "namelists" not in r
+        assert "fcheck" not in r
+
+
+def test_list_setups_names_only_with_filter():
+    records = list_setups_tool(name="neverworld2", names_only=True)
+    assert len(records) >= 1
+    for r in records:
+        assert "neverworld2" in r["name"].lower()
+        assert "namelists" not in r

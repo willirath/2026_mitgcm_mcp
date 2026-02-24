@@ -143,6 +143,14 @@ def translate_lab_params(
             "dx": _dx.to(ureg.meter).magnitude if _dx is not None else None,
             "dy": _dy.to(ureg.meter).magnitude if _dy is not None else None,
             "dz": _dz.to(ureg.meter).magnitude if _dz is not None else None,
+            "dt": (
+                0.1 * min(
+                    _dx.to(ureg.meter).magnitude,
+                    _dy.to(ureg.meter).magnitude,
+                ) ** 2 / _nu.to(ureg.meter ** 2 / ureg.second).magnitude
+                if _dx is not None and _dy is not None
+                else None
+            ),
         },
         "notes": notes,
     }

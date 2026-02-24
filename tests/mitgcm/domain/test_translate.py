@@ -91,15 +91,17 @@ def test_square_no_rectangular_note():
 # --- derived dict ---
 
 def test_derived_keys():
-    """derived dict should have f0, L, aspect_ratio, and dx/dy/dz (None when N not given)."""
+    """derived dict should have f0, L, aspect_ratio, dx/dy/dz, and dt."""
     result = _base_call()
     d = result["derived"]
     assert "f0" in d
     assert "L" in d
     assert "aspect_ratio" in d
+    assert "dt" in d
     assert d["dx"] is None
     assert d["dy"] is None
     assert d["dz"] is None
+    assert d["dt"] is None  # dt is None when Nx/Ny not given
 
 
 def test_derived_dx_dy_dz_populated():
@@ -123,3 +125,21 @@ def test_derived_aspect_ratio():
     """derived aspect_ratio should equal depth / min(Lx, Ly)."""
     result = translate_lab_params(Lx=0.8, Ly=0.8, depth=0.2, Omega=1.0)
     assert math.isclose(result["derived"]["aspect_ratio"], 0.2 / 0.8)
+
+
+def test_derived_dt_finite_when_grid_given():
+    """derived dt should be finite and positive when Nx and Ny are given."""
+    result = translate_lab_params(
+        Lx=0.8, Ly=0.8, depth=0.2, Omega=1.0, Nx=80, Ny=80, nu=1e-6
+    )
+    dt = result["derived"]["dt"]
+    assert dt is not None
+    assert dt > 0
+    # Viscous CFL: 0.1 * dx^2 / nu = 0.1 * (0.01)^2 / 1e-6 = 10.0
+    assert math.isclose(dt, 0.1 * (0.8 / 80) ** 2 / 1e-6)
+
+
+def test_derived_dt_none_without_grid():
+    """derived dt should be None when Nx/Ny not given."""
+    result = translate_lab_params(Lx=0.8, Ly=0.8, depth=0.2, Omega=1.0)
+    assert result["derived"]["dt"] is None

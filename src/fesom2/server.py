@@ -252,6 +252,7 @@ def get_doc_source_tool(
 def list_setups_tool(
     name: str | None = None,
     source: str | None = None,
+    names_only: bool = False,
 ) -> list[dict]:
     """Return FESOM2 setup records, optionally filtered.
 
@@ -277,8 +278,14 @@ def list_setups_tool(
     source : str or None
         Exact filter on source type: ``"reference_namelist"`` or
         ``"ci_setup"``. Omit to return both.
+    names_only : bool
+        If True, return only ``{name, source, mesh, forcing, notes}`` per
+        record — omit ``namelists`` and ``fcheck``. Use this to enumerate
+        available setups without overflowing the token budget, then follow up
+        with a targeted ``name=`` call to retrieve full namelist details.
 
     **When to use:**
+    - ``names_only=True`` → enumerate all setups (≥ 16 records) cheaply.
     - ``source="reference_namelist"`` → complete annotated starting configs
       (toy_neverworld2, toy_dbgyre, toy_soufflet, forcing presets).
     - ``source="ci_setup"`` → sparse overrides for CI-tested physics variants
@@ -291,6 +298,11 @@ def list_setups_tool(
         records = [r for r in records if needle in r["name"].lower()]
     if source is not None:
         records = [r for r in records if r["source"] == source]
+    if names_only:
+        records = [
+            {k: r[k] for k in ("name", "source", "mesh", "forcing", "notes")}
+            for r in records
+        ]
     return records
 
 

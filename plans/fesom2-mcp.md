@@ -344,12 +344,12 @@ _Feedback:_
 
 ### Tier 6 — MCP server + FastMCP wiring
 
-- [ ] `src/fesom2_server.py` with all ~19 tools registered
-- [ ] Tool descriptions tuned for FESOM2 concepts
-- [ ] `get_workflow_tool` workflows: `design_experiment`, `debug_configuration`,
+- [x] `src/fesom2/server.py` with all 19 tools registered
+- [x] Tool descriptions tuned for FESOM2 concepts (modules not packages, namelist.io, ALE, METIS)
+- [x] `get_workflow_tool` workflows: `design_experiment`, `debug_configuration`,
   `understand_module`, `explore_code`
-- [ ] `test_fesom2_server.py` — tool count + name coverage
-- [ ] Update `.mcp.json` with `fesom2` entry
+- [x] `tests/fesom2/test_server.py` — tool count + name coverage (5 tests)
+- [x] Update `.mcp.json` with `fesom2` entry (`pixi run fesom2-serve`)
 - Done when: all tests pass with `pixi run test`
 
 _Feedback:_

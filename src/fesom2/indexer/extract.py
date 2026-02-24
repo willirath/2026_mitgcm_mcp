@@ -270,7 +270,7 @@ def extract_file(path: Path) -> tuple[list[ModuleRecord], list[SubroutineRecord]
             calls = _extract_calls(lines, sub_start, sub_end, sub_name)
             subroutines.append(SubroutineRecord(
                 name=sub_name,
-                module_name='',
+                module_name=Path(rel).stem,
                 file=rel,
                 start_line=sub_start + 1,
                 end_line=sub_end + 1,
