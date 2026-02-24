@@ -7,7 +7,7 @@ decorators or name typos.
 
 import asyncio
 
-from src.server import mcp
+from src.mitgcm_server import mcp
 
 EXPECTED_TOOLS = {
     "search_code_tool",
@@ -51,7 +51,7 @@ def test_all_tools_have_descriptions():
 
 def test_namelist_to_code_unknown_param_returns_warning():
     """namelist_to_code_tool should return a warning dict for unknown params."""
-    from src.server import namelist_to_code_tool
+    from src.mitgcm_server import namelist_to_code_tool
 
     result = namelist_to_code_tool("completelyUnknownXyz123")
     assert len(result) == 1
@@ -61,7 +61,7 @@ def test_namelist_to_code_unknown_param_returns_warning():
 
 def test_namelist_to_code_known_param_has_no_warning():
     """namelist_to_code_tool should return normal results for known params."""
-    from src.server import namelist_to_code_tool
+    from src.mitgcm_server import namelist_to_code_tool
 
     result = namelist_to_code_tool("deltaT")
     assert len(result) >= 1

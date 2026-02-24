@@ -3,8 +3,8 @@
 import pytest
 import chromadb
 
-from src.tools import get_verification_source
-from src.embedder.pipeline import OVERLAP
+from src.mitgcm_tools import get_verification_source
+from src.embed_utils import OVERLAP
 
 
 @pytest.fixture(scope="module")

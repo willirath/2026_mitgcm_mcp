@@ -1,7 +1,7 @@
 """Shared fixtures for tools tests."""
 
 import pytest
-from src.indexer.schema import connect
+from src.mitgcm_indexer.schema import connect
 
 
 @pytest.fixture(scope="session")

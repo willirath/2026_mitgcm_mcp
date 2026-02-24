@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
-from ..embedder.pipeline import BATCH_SIZE
+from ..embed_utils import BATCH_SIZE
 from ..fesom2_indexer.schema import DB_PATH, connect as duckdb_connect
 from .pipeline import _embed_with_retry
 from .store import CHROMA_PATH, get_namelists_collection

@@ -3,7 +3,7 @@
 No DuckDB or ollama required.
 """
 
-from src.embedder.pipeline import MAX_CHARS, OVERLAP
+from src.embed_utils import MAX_CHARS, OVERLAP
 from src.fesom2_embedder.pipeline import _doc_chunks
 
 

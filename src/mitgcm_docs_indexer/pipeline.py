@@ -22,9 +22,10 @@ log = logging.getLogger(__name__)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
-from ..embedder.pipeline import _chunk_text, EMBED_MODEL, BATCH_SIZE, MAX_CHARS, OVERLAP
-from ..embedder.store import CHROMA_PATH, get_docs_collection
-from .parse import iter_headers, iter_sections
+from ..embed_utils import _chunk_text, EMBED_MODEL, BATCH_SIZE, MAX_CHARS, OVERLAP
+from ..mitgcm_embedder.store import CHROMA_PATH, get_docs_collection
+from ..rst_parser import iter_sections
+from .parse import iter_headers
 
 DOC_ROOT = Path("MITgcm/doc")
 MITGCM_ROOT = Path("MITgcm")

@@ -16,35 +16,9 @@ log = logging.getLogger(__name__)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
-from ..indexer.schema import DB_PATH, connect as duckdb_connect
+from ..embed_utils import _chunk_text, EMBED_MODEL, BATCH_SIZE, MAX_CHARS, OVERLAP
+from ..mitgcm_indexer.schema import DB_PATH, connect as duckdb_connect
 from .store import CHROMA_PATH, get_subroutine_collection
-
-EMBED_MODEL = "nomic-embed-text"
-BATCH_SIZE = 10
-# nomic-embed-text context window is ~2000 tokens; ~4000 chars of Fortran code
-# fits safely within that budget.
-MAX_CHARS = 4000
-# Overlap between consecutive chunks so that content near a boundary
-# appears in two chunks and is not lost to either.
-OVERLAP = 200
-
-
-def _chunk_text(text: str, max_chars: int, overlap: int) -> list[str]:
-    """Split text into overlapping chunks of at most max_chars characters each.
-
-    Short texts (len <= max_chars) are returned as a single-element list.
-    Each chunk after the first starts overlap characters before the end of
-    the previous chunk.
-    """
-    if len(text) <= max_chars:
-        return [text]
-    step = max_chars - overlap
-    chunks = []
-    start = 0
-    while start < len(text):
-        chunks.append(text[start : start + max_chars])
-        start += step
-    return chunks
 
 
 def _doc_chunks(

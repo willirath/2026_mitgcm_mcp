@@ -14,7 +14,7 @@ Uses the adv_db fixture (see conftest.py) which has 5 subroutines covering:
 """
 
 import pytest
-from src.tools import (
+from src.mitgcm_tools import (
     diagnostics_fill_to_source,
     get_callees,
     get_callers,

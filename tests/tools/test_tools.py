@@ -1,7 +1,7 @@
 """Tests for src/tools.py — all use the synthetic test_db fixture."""
 
 import pytest
-from src.tools import (
+from src.mitgcm_tools import (
     _normalize_query,
     diagnostics_fill_to_source,
     find_subroutines,

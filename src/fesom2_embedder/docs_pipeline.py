@@ -16,8 +16,8 @@ log = logging.getLogger(__name__)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
-from ..embedder.pipeline import _chunk_text, BATCH_SIZE, MAX_CHARS, OVERLAP
-from ..docs_indexer.parse import iter_sections
+from ..embed_utils import _chunk_text, BATCH_SIZE, MAX_CHARS, OVERLAP
+from ..rst_parser import iter_sections
 from .pipeline import _embed_with_retry
 from .store import CHROMA_PATH, get_docs_collection
 

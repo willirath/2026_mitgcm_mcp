@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from src.indexer.extract import extract_file
+from src.mitgcm_indexer.extract import extract_file
 
 
 # ---------------------------------------------------------------------------

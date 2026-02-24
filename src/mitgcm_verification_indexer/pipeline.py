@@ -20,8 +20,8 @@ log = logging.getLogger(__name__)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 
-from src.embedder.pipeline import BATCH_SIZE, EMBED_MODEL, MAX_CHARS, OVERLAP, _chunk_text
-from src.embedder.store import CHROMA_PATH, get_verification_collection
+from src.embed_utils import BATCH_SIZE, EMBED_MODEL, MAX_CHARS, OVERLAP, _chunk_text
+from src.mitgcm_embedder.store import CHROMA_PATH, get_verification_collection
 
 MITGCM = Path("MITgcm")
 EXPERIMENT_DIRS = [MITGCM / "verification"]

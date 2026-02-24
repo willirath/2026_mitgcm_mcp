@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from src.verification_indexer.parse import (
+from src.mitgcm_verification_indexer.parse import (
     parse_data_namelist,
     parse_packages_conf,
     parse_size_h,

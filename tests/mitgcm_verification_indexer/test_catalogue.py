@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from src.verification_indexer.catalogue import _domain_class, build_catalogue
+from src.mitgcm_verification_indexer.catalogue import _domain_class, build_catalogue
 
 
 # ---------------------------------------------------------------------------

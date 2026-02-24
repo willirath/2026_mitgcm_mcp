@@ -4,8 +4,8 @@ import re
 from contextlib import contextmanager
 from pathlib import Path
 
-from src.indexer.schema import DB_PATH, connect
-from src.embedder.store import (
+from src.mitgcm_indexer.schema import DB_PATH, connect
+from src.mitgcm_embedder.store import (
     CHROMA_PATH,
     COLLECTION_NAME,
     DOCS_COLLECTION_NAME,
@@ -320,7 +320,7 @@ def get_doc_source(
     Use search_docs to discover file and section values.
     Returns {file, section, total_lines, offset, lines} or None if not found.
     """
-    from .embedder.pipeline import OVERLAP
+    from .embed_utils import OVERLAP
 
     collection = get_collection(DOCS_COLLECTION_NAME, _chroma_path)
     results = collection.get(
@@ -372,7 +372,7 @@ def get_verification_source(
     Use search_verification to discover file paths.
     Returns {file, total_lines, offset, lines} or None if not found.
     """
-    from .embedder.pipeline import OVERLAP
+    from .embed_utils import OVERLAP
 
     collection = get_collection(VERIFICATION_COLLECTION_NAME, _chroma_path)
     results = collection.get(
@@ -417,7 +417,7 @@ def list_verification_experiments() -> list[dict]:
     Each entry has: name, tutorial, packages, domain_class, Nx, Ny, Nr,
     grid_type, nonhydrostatic, free_surface, eos_type.
     """
-    from src.verification_indexer.catalogue import build_catalogue
+    from src.mitgcm_verification_indexer.catalogue import build_catalogue
     return build_catalogue()
 
 

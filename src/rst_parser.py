@@ -1,4 +1,4 @@
-"""Parse MITgcm RST documentation into plain-text sections for embedding.
+"""Parse RST documentation into plain-text sections for embedding.
 
 Each RST file is split into sections delimited by heading underlines.  The
 text of each section is cleaned of RST markup (directives, inline roles,
@@ -9,9 +9,9 @@ table grid characters) and returned as a dict:
      "text": "...plain text..."}
 
 The file path is relative to the doc root passed to ``iter_sections``.
+Used by both MITgcm and FESOM2 doc embedding pipelines.
 """
 
-import itertools
 import re
 from pathlib import Path
 
@@ -108,7 +108,6 @@ def _split_sections(lines: list[str]) -> list[tuple[str, list[str]]]:
             current_heading = line.strip()
             current_body = []
             i += 2  # skip heading text and underline
-            # Also skip an optional overline above the title (i-2 already consumed)
             continue
         current_body.append(line)
         i += 1
@@ -116,39 +115,6 @@ def _split_sections(lines: list[str]) -> list[tuple[str, list[str]]]:
     # Final section.
     sections.append((current_heading, current_body))
     return sections
-
-
-def iter_headers(mitgcm_root: Path) -> list[dict]:
-    """Return one dict per .h file from verification experiments and core headers.
-
-    Covers three locations under mitgcm_root:
-      - verification/*/code/*.h  — experiment-level header overrides
-      - model/inc/*.h            — core model headers (PARAMS.h, DYNVARS.h, …)
-      - eesupp/inc/*.h           — execution environment headers (EXCH.h, …)
-
-    Each dict has keys:
-        file    – path relative to mitgcm_root (str, forward slashes)
-        section – filename (e.g. "PARAMS.h")
-        text    – raw file content
-
-    Empty files are skipped.
-    """
-    results = []
-    globs = [
-        mitgcm_root.glob("verification/*/code/*.h"),
-        mitgcm_root.glob("model/inc/*.h"),
-        mitgcm_root.glob("eesupp/inc/*.h"),
-    ]
-    for h_path in sorted(itertools.chain(*globs)):
-        text = h_path.read_text(encoding="utf-8", errors="replace")
-        if not text.strip():
-            continue
-        results.append({
-            "file": h_path.relative_to(mitgcm_root).as_posix(),
-            "section": h_path.name,
-            "text": text,
-        })
-    return results
 
 
 def iter_sections(doc_root: Path) -> list[dict]:

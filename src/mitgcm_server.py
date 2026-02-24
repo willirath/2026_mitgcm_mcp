@@ -2,7 +2,7 @@
 
 from mcp.server.fastmcp import FastMCP
 
-from src.tools import (
+from src.mitgcm_tools import (
     diagnostics_fill_to_source,
     find_subroutines,
     get_callees,

@@ -9,4 +9,4 @@ ollama serve >/dev/null 2>&1 &
 
 # Start the MCP server immediately (stdio transport).
 # exec replaces this shell so Docker signals reach the Python process.
-exec python3 -m src.server
+exec python3 -m src.mitgcm_server

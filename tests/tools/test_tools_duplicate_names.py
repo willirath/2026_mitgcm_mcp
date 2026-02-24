@@ -28,8 +28,8 @@ Desired behaviour (also xfail — fix not yet implemented)
 """
 
 import pytest
-from src.tools import find_subroutines, get_callees, get_callers, get_subroutine
-from src.indexer.schema import connect
+from src.mitgcm_tools import find_subroutines, get_callees, get_callers, get_subroutine
+from src.mitgcm_indexer.schema import connect
 
 
 # ---------------------------------------------------------------------------
