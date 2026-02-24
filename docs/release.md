@@ -30,7 +30,7 @@ gfortran + MPICH + NetCDF-Fortran + the MITgcm source tree baked in at
 `/MITgcm`. Agents use it as a `FROM` base in their experiment Dockerfiles.
 
 ```bash
-VERSION=v2026.02.4
+VERSION=v2026.02.5
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   -t ghcr.io/willirath/2026-mitgcm-mcp:runtime-${VERSION} \
@@ -49,7 +49,7 @@ The MCP image (`ghcr.io/willirath/2026-mitgcm-mcp:mcp-*`) bundles Ollama,
 the embedding model, Python runtime, and pre-built indices from `data/`.
 
 ```bash
-VERSION=v2026.02.4
+VERSION=v2026.02.5
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   -t ghcr.io/willirath/2026-mitgcm-mcp:mcp-${VERSION} \
@@ -120,7 +120,7 @@ tar -czf rotating_convection.tar.gz \
 ## 4. Create the GitHub release
 
 ```bash
-VERSION=v2026.02.4
+VERSION=v2026.02.5
 gh release create ${VERSION} \
   --title "MITgcm MCP ${VERSION}" \
   --notes "MCP image: \`ghcr.io/willirath/2026-mitgcm-mcp:mcp-${VERSION}\`
@@ -143,10 +143,10 @@ MITgcm source: submodule pinned at \`decd05a\` (checkpoint69k)." \
 On a clean machine (or after removing the local image):
 
 ```bash
-docker rmi ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.4 2>/dev/null || true
+docker rmi ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.5 2>/dev/null || true
 
 claude mcp add --transport stdio --scope user mitgcm -- \
-  docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.4
+  docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.5
 ```
 
 Then in a Claude Code session:
@@ -162,7 +162,7 @@ Expected: `namelist_to_code_tool` returns a result referencing `cg3dMaxIters`.
 ## 6. Git tag
 
 ```bash
-VERSION=v2026.02.4
+VERSION=v2026.02.5
 git tag -a ${VERSION} -m "Release ${VERSION}"
 git push origin ${VERSION}
 ```

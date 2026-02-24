@@ -12,12 +12,12 @@ Requires Docker and Claude Code or Codex CLI.
 **Claude Code:**
 ```bash
 claude mcp add --transport stdio --scope user mitgcm -- \
-  docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.4
+  docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.5
 ```
 
 **Codex CLI:**
 ```bash
-codex mcp add mitgcm -- docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.4
+codex mcp add mitgcm -- docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.5
 ```
 
 Docker pulls the image on first use (~600 MB — includes Ollama, the embedding
@@ -51,7 +51,7 @@ Claude: The decomposition is entirely compile-time: SIZE.h sets nPx,
 
 ## What it does
 
-Seventeen tools across four layers. Call `get_workflow_tool` at the start of a
+Twenty-one tools across four layers. Call `get_workflow_tool` at the start of a
 session to get a recommended tool sequence for your task.
 
 ### Code navigation
@@ -73,8 +73,11 @@ session to get a recommended tool sequence for your task.
 
 | Tool | What it does |
 |---|---|
-| `search_docs_tool` | Semantic search over MITgcm RST docs and verification headers |
+| `search_docs_tool` | Semantic search over MITgcm RST docs and `.h` headers |
 | `get_doc_source_tool` | Full text of a doc section or header file (use after `search_docs_tool`) |
+| `list_verification_experiments_tool` | Catalogue of all verification/tutorial experiments with packages, grid, physics |
+| `search_verification_tool` | Semantic search over verification experiment namelists and headers |
+| `get_verification_source_tool` | Full text of a verification experiment file (use after `search_verification_tool`) |
 
 ### Domain knowledge
 
@@ -84,6 +87,7 @@ session to get a recommended tool sequence for your task.
 | `check_scales_tool` | Dimensionless numbers, CFL/Ekman flags |
 | `lookup_gotcha_tool` | Known configuration traps by keyword |
 | `suggest_experiment_config_tool` | Skeleton config + quickstart recipe for an experiment type |
+| `get_namelist_structure_tool` | Map of all namelist files → groups → descriptions |
 
 ### Workflow guidance
 

@@ -9,12 +9,12 @@ up with zero network configuration.
 **Claude Code:**
 ```bash
 claude mcp add --transport stdio --scope user mitgcm -- \
-  docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.4
+  docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.5
 ```
 
 **Codex CLI:**
 ```bash
-codex mcp add mitgcm -- docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.4
+codex mcp add mitgcm -- docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.5
 ```
 
 ## Development use
@@ -121,6 +121,37 @@ Full paginated text of a documentation section or header file. Use
 `search_docs_tool` first to discover `file` and `section` values, then call
 this to read the complete content. Mirrors `get_source_tool` for subroutines.
 Returns `{file, section, total_lines, offset, lines}` or `None` if not found.
+
+### Verification experiments
+
+#### `list_verification_experiments_tool`
+```
+list_verification_experiments_tool() -> list[dict]
+```
+Structured catalogue of all MITgcm verification and tutorial experiments.
+Per-experiment fields: `name`, `tutorial`, `packages`, `domain_class`,
+`Nx`, `Ny`, `Nr`, `grid_type`, `nonhydrostatic`, `free_surface`, `eos_type`.
+All fields derived automatically from experiment files. No Ollama required.
+
+#### `search_verification_tool`
+```
+search_verification_tool(query: str, top_k: int = 5) -> list[dict]
+```
+Semantic search over verification/tutorial experiment configuration files
+(`input/data*`, `input/eedata`, `code/*.h`, `code/packages.conf`). Each
+result has `experiment`, `file`, `filename`, `snippet`. Follow up with
+`get_verification_source_tool` to read the full file content.
+
+#### `get_verification_source_tool`
+```
+get_verification_source_tool(file: str,
+                              offset: int = 0, limit: int = 200) -> dict | None
+```
+Full paginated text of a verification experiment file. Use
+`search_verification_tool` first to discover `file` paths
+(e.g. `"verification/rotating_convection/input/data"`). Returns
+`{file, total_lines, offset, lines}` or `None` if not found. Call
+repeatedly with increasing `offset` to page through large files.
 
 ### Domain knowledge
 

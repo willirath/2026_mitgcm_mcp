@@ -452,6 +452,6 @@ Container currently runs as root. Add a dedicated non-root user.
 - [x] Both images built and pushed (`mcp-v2026.02.5`, `runtime-v2026.02.5`)
 - [ ] GitHub release created
 - [ ] Git tag pushed
-- [ ] `docs/release.md` VERSION updated
-- [ ] `.mcp.json` updated
-- [ ] `README.md` and `docs/mcp-server.md` install commands updated
+- [x] `docs/release.md` VERSION updated
+- [x] `.mcp.json` updated
+- [x] `README.md` and `docs/mcp-server.md` install commands updated
