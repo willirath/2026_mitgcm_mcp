@@ -82,42 +82,7 @@ stays public across re-pushes.
 
 ---
 
-## 3. Package the experiment archive
-
-```bash
-pixi run package-rotating-convection
-```
-
-Creates `rotating_convection.tar.gz` (~8 MB) containing:
-
-```
-rotating_convection/
-├── README.md
-├── gen.py
-├── plot.py
-├── T_section.png
-├── code/
-└── input/
-```
-
-The archive does not include `build/` or `run/` (gitignored). Users
-unpack it, run `gen.py` if they want to regenerate the input files,
-then use `pixi run build-rotating-convection` /
-`pixi run run-rotating-convection` against the `mitgcm:latest` image.
-
-The `package-rotating-convection` pixi task runs:
-
-```bash
-tar -czf rotating_convection.tar.gz \
-  -C experiments \
-  --exclude rotating_convection/build \
-  --exclude rotating_convection/run \
-  rotating_convection
-```
-
----
-
-## 4. Create the GitHub release
+## 3. Create the GitHub release
 
 ```bash
 VERSION=v2026.02.5
@@ -132,13 +97,12 @@ claude mcp add --transport stdio --scope user mitgcm -- \\
   docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-${VERSION}
 \`\`\`
 
-MITgcm source: submodule pinned at \`decd05a\` (checkpoint69k)." \
-  rotating_convection.tar.gz
+MITgcm source: submodule pinned at \`decd05a\` (checkpoint69k)."
 ```
 
 ---
 
-## 5. Smoke test
+## 4. Smoke test
 
 On a clean machine (or after removing the local image):
 
@@ -159,7 +123,7 @@ Expected: `namelist_to_code_tool` returns a result referencing `cg3dMaxIters`.
 
 ---
 
-## 6. Git tag
+## 5. Git tag
 
 ```bash
 VERSION=v2026.02.5
