@@ -1,0 +1,181 @@
+"""Skeleton experiment configurations for known FESOM2 setups.
+
+FESOM2 configurations are namelist-driven (no CPP flags beyond CMake build
+options). Each entry returns the key namelist parameters to set, with notes
+on what else must be prepared (mesh, forcing weights, partitioning).
+
+Recognised experiment types:
+- baroclinic_channel  : Neverworld2-style re-entrant channel with ACC-like flow
+- pi_control          : global pre-industrial control starting points
+- rotating_convection : f-plane convection driven by surface buoyancy flux
+"""
+
+
+_CONFIGS: dict = {
+    "baroclinic_channel": {
+        "experiment_type": "baroclinic_channel",
+        "description": (
+            "Neverworld2-style re-entrant baroclinic channel with ACC-like flow. "
+            "Idealised double-gyre + channel geometry; wind-driven with weak restoring. "
+            "Produces mesoscale eddies at sufficient resolution."
+        ),
+        "namelists": {
+            "namelist.config": {
+                "step_per_day": "<choose so dt = 86400/step_per_day satisfies CFL>",
+                "run_length": "<number of years>",
+                "run_length_unit": "'y'",
+                "use_ice": ".false.",
+                "use_cavity": ".false.",
+                "toy_ocean": ".true.",
+            },
+            "namelist.oce": {
+                "ALE_transform": "'zstar'",
+                "min_hnode": "1.0",
+                "surf_relax_S": "0.0",
+                "surf_relax_T": "<weak restoring timescale, e.g. 1.0/(30*86400)>",
+            },
+            "namelist.forcing": {
+                "wind_data_source": "'CORE2'",
+                "CORE_forcing_dir": "'<path to CORE2 wind files>'",
+            },
+        },
+        "notes": [
+            "Use a toy_channel or Neverworld2 mesh — see FESOM2 test/mesh/ for examples.",
+            "Set step_per_day so that dt ≤ ~1800 s for eddy-resolving runs (0.1°).",
+            "surf_relax_T controls SST restoring to an observed climatology; set to 0 for fully adiabatic.",
+            "With use_ice=.false., the ice routines are skipped entirely.",
+            "Run the METIS partitioner for your target MPI rank count before the first run.",
+            "Check output in namelist.io: add 'temp', 'salt', 'u', 'v', 'ssh' at minimum.",
+        ],
+    },
+    "pi_control": {
+        "experiment_type": "pi_control",
+        "description": (
+            "Global pre-industrial control simulation. "
+            "CORE2 normal-year forcing or repeat-year JRA55-do; "
+            "full sea ice; no cavity. Starting point for climate-mode FESOM2 runs."
+        ),
+        "namelists": {
+            "namelist.config": {
+                "step_per_day": "32",
+                "run_length": "100",
+                "run_length_unit": "'y'",
+                "use_ice": ".true.",
+                "use_cavity": ".false.",
+                "part_format": "'binary'",
+            },
+            "namelist.oce": {
+                "ALE_transform": "'zstar'",
+                "min_hnode": "1.0",
+                "K_GM": "1500.0",
+                "K_GM_max": "4000.0",
+                "surf_relax_S": "<weak salinity restoring, e.g. 1.0/(180*86400)>",
+            },
+            "namelist.ice": {
+                "whichEVP": "2",
+                "alpha": "500.0",
+                "beta": "500.0",
+                "Pstar": "27500.0",
+            },
+            "namelist.forcing": {
+                "wind_data_source": "'CORE2'",
+                "CORE_forcing_dir": "'<path to CORE2 files>'",
+                "ncar_bulk_formulae": ".true.",
+            },
+        },
+        "notes": [
+            "step_per_day=32 gives dt=2700 s — typical for FESOM2 at 1° core resolution.",
+            (
+                "K_GM (Gent-McWilliams eddy diffusivity) and K_GM_max are key tuning "
+                "parameters for coarse-resolution runs. Values around 1000–2000 m²/s are common."
+            ),
+            "Precompute CORE2 interpolation weight files for your mesh before running.",
+            "Initialise from World Ocean Atlas climatology (T, S on standard levels).",
+            "Run at least 200–500 years to reach quasi-equilibrium ocean heat content.",
+            "Weak surface salinity restoring (surf_relax_S > 0) prevents salinity drift.",
+            (
+                "For mEVP (whichEVP=2): alpha=beta=500 is a robust starting point at 1° "
+                "resolution. Reduce to ~100–200 for finer meshes."
+            ),
+        ],
+    },
+    "rotating_convection": {
+        "experiment_type": "rotating_convection",
+        "description": (
+            "f-plane rotating convection in a closed basin. Surface buoyancy loss "
+            "drives deep convection; rotation organises it into columnar plumes. "
+            "Analogous to the MITgcm rotating_convection setup but on an unstructured mesh."
+        ),
+        "namelists": {
+            "namelist.config": {
+                "step_per_day": "<choose: dt = 86400/step_per_day, satisfy vertical CFL>",
+                "run_length": "<number of days>",
+                "run_length_unit": "'d'",
+                "use_ice": ".false.",
+                "use_cavity": ".false.",
+                "toy_ocean": ".true.",
+                "f_plane_lat": "<latitude for f-plane, e.g. 45.0>",
+            },
+            "namelist.oce": {
+                "ALE_transform": "'zlevel'",
+                "visc_sh_limit": "<horizontal viscosity, m²/s>",
+                "K_hor": "<horizontal diffusivity, m²/s>",
+                "K_ver": "<vertical diffusivity, m²/s>",
+                "surf_relax_T": "0.0",
+                "surf_relax_S": "0.0",
+            },
+            "namelist.forcing": {
+                "use_surface_heat_flux": ".true.",
+                "surf_heat_flux_const": "<W/m², positive = cooling>",
+            },
+        },
+        "notes": [
+            "Use a toy closed-basin mesh at high resolution (O(100 m) horizontal, O(10 m) vertical).",
+            (
+                "Vertical CFL: w * dt / dz < 0.5. Convective velocities can reach "
+                "O(mm/s – cm/s); check after initial spin-up and reduce dt if needed."
+            ),
+            "f_plane_lat sets the Coriolis parameter f = 2Ω sin(lat); use 45° for f ≈ 1e-4 rad/s.",
+            "Linear EOS: set ref_sss and ref_sst in namelist.oce and use constant tAlpha.",
+            "Spin up without heat flux for O(Ek^{-1/2}) rotation periods before enabling forcing.",
+            "No sea ice needed (use_ice=.false.); no GM parameterisation needed at convective scales.",
+        ],
+    },
+}
+
+_ALIASES: dict = {
+    "channel": "baroclinic_channel",
+    "neverworld": "baroclinic_channel",
+    "neverworld2": "baroclinic_channel",
+    "acc": "baroclinic_channel",
+    "control": "pi_control",
+    "pre-industrial": "pi_control",
+    "preindustrial": "pi_control",
+    "convection": "rotating_convection",
+    "rotating convection": "rotating_convection",
+}
+
+
+def suggest_experiment_config(experiment_type: str) -> dict | None:
+    """Return a skeleton FESOM2 configuration for a known experiment type.
+
+    Parameters
+    ----------
+    experiment_type : str
+        Experiment name. Recognised values: "baroclinic_channel", "pi_control",
+        "rotating_convection". Common aliases: "channel", "neverworld2",
+        "control", "convection". Lookup is case-insensitive.
+
+    Returns
+    -------
+    dict or None
+        Configuration dict with keys:
+        - "experiment_type" : str
+        - "description"     : str
+        - "namelists"       : dict of namelist-file -> dict of group -> dict of param -> value
+        - "notes"           : list of str (setup reminders and parameter guidance)
+        Returns None if the experiment type is not recognised.
+    """
+    key = experiment_type.lower().strip()
+    key = _ALIASES.get(key, key)
+    return _CONFIGS.get(key)
