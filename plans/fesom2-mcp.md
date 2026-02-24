@@ -325,18 +325,19 @@ _Feedback:_
 
 ### Tier 4 — Domain knowledge layer
 
-- [ ] FESOM2 gotchas (unstructured mesh, ALE, forcing, sea ice)
-- [ ] FESOM2 `suggest_experiment_config_tool` entries
-- [ ] Reuse `translate_lab_params_tool` and `check_scales_tool` unchanged
-- [ ] Tests: keyword-based gotcha tests (synthetic)
+- [x] FESOM2 gotchas (unstructured mesh, ALE, forcing, sea ice)
+- [x] FESOM2 `suggest_experiment_config_tool` entries
+- [x] Reuse `translate_lab_params_tool` and `check_scales_tool` unchanged
+- [x] Tests: keyword-based gotcha tests (synthetic)
 - Done when: `lookup_gotcha_tool("ALE")` returns meaningful entries
 
 _Feedback:_
 
 ### Tier 5 — Setups catalogue
 
-- [ ] Parse `setups/*/setup.yml` → `list_setups_tool` response
-- [ ] Tests: parse synthetic YAML
+- [x] Parse `setups/*/setup.yml` → `list_setups_tool` response
+- [x] Parse `config/namelist.X.suffix` → reference_namelist records with `{value, comment}` leaves
+- [x] Tests: parse synthetic YAML and Fortran namelists (35 tests)
 - Done when: `list_setups_tool()` returns all setups with mesh/forcing/override fields
 
 _Feedback:_
