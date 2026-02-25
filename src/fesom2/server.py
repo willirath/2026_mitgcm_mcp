@@ -23,7 +23,7 @@ from src.fesom2.domain import (
     get_workflow,
     get_namelist_structure,
 )
-from src.mitgcm.domain import translate_lab_params, check_scales
+from src.shared import translate_lab_params, check_scales
 
 mcp = FastMCP("fesom2")
 

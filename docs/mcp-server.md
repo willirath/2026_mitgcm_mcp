@@ -1,8 +1,8 @@
-# MCP server
+# MCP server (MITgcm)
 
-`src/server.py` wraps all tools in an MCP server using FastMCP (bundled in
-the official `mcp` SDK). It communicates over stdio so Claude Code picks it
-up with zero network configuration.
+`src/mitgcm/server.py` exposes MITgcm code-navigation tools via FastMCP
+over stdio. For the FESOM2 equivalent see `src/fesom2/server.py`; the
+install instructions and tool reference for FESOM2 are in `README.md`.
 
 ## Install (users)
 

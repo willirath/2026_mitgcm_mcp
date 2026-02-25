@@ -4,11 +4,13 @@ from mcp.server.fastmcp import FastMCP
 
 from src.mitgcm.tools import (
     diagnostics_fill_to_source,
+    find_packages,
     find_subroutines,
     get_callees,
     get_callers,
     get_cpp_requirements,
     get_doc_source,
+    get_package,
     get_package_flags,
     get_subroutine,
     get_verification_source,
@@ -18,9 +20,8 @@ from src.mitgcm.tools import (
     search_docs,
     search_verification,
 )
+from src.shared import translate_lab_params, check_scales
 from src.mitgcm.domain import (
-    translate_lab_params,
-    check_scales,
     lookup_gotcha,
     suggest_experiment_config,
     get_workflow,
@@ -184,6 +185,35 @@ def get_package_flags_tool(package_name: str) -> list[dict]:
     their flags.
     """
     return get_package_flags(package_name)
+
+
+@mcp.tool()
+def find_packages_tool() -> list[dict]:
+    """Return all MITgcm packages in the index with subroutine counts.
+
+    Use this to orient yourself to the codebase structure before diving
+    into specific packages. Returns a list sorted alphabetically by
+    package name, each with keys: ``package``, ``subroutine_count``.
+
+    Follow up with ``get_package_tool`` to see subroutines and CPP flags
+    for a specific package.
+    """
+    return find_packages()
+
+
+@mcp.tool()
+def get_package_tool(package_name: str) -> dict | None:
+    """Return metadata for a MITgcm package including its subroutines.
+
+    Name lookup is case-insensitive. Returns None if not found.
+
+    Returns keys: ``name``, ``files`` (list of source files),
+    ``subroutine_count``, ``subroutines`` (list of name/file/line_start/line_end),
+    ``cpp_flags`` (list of cpp_flag/description).
+
+    Mirrors FESOM2's ``get_module_tool`` for package-level navigation.
+    """
+    return get_package(package_name)
 
 
 @mcp.tool()

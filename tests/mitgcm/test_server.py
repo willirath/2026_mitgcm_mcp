@@ -19,6 +19,8 @@ EXPECTED_TOOLS = {
     "namelist_to_code_tool",
     "diagnostics_fill_to_source_tool",
     "get_cpp_requirements_tool",
+    "find_packages_tool",
+    "get_package_tool",
     "get_package_flags_tool",
     "translate_lab_params_tool",
     "check_scales_tool",

@@ -3,7 +3,7 @@
 import math
 import pytest
 
-from src.mitgcm.domain.translate import translate_lab_params
+from src.shared.translate import translate_lab_params
 
 
 def _base_call(**kwargs):

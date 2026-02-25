@@ -305,6 +305,55 @@ def get_package_flags(package_name: str, _db_path: Path = DB_PATH) -> list[dict]
     return [{"cpp_flag": r[0], "description": r[1]} for r in rows]
 
 
+def find_packages(_db_path: Path = DB_PATH) -> list[dict]:
+    """Return all packages in the index with subroutine counts.
+
+    Returns a list of dicts with keys: package, subroutine_count.
+    Sorted alphabetically by package name.
+    """
+    with _db(_db_path) as con:
+        rows = con.execute(
+            "SELECT package, COUNT(*) as n FROM subroutines GROUP BY package ORDER BY package",
+        ).fetchall()
+
+    return [{"package": r[0], "subroutine_count": r[1]} for r in rows]
+
+
+def get_package(package_name: str, _db_path: Path = DB_PATH) -> dict | None:
+    """Return metadata for a MITgcm package including its subroutines.
+
+    Returns None if the package is not found.  Includes: package name,
+    source files, subroutine list (name, file, line_start, line_end),
+    and CPP flags defined by the package.
+    """
+    with _db(_db_path) as con:
+        rows = con.execute(
+            "SELECT id, name, file, line_start, line_end FROM subroutines "
+            "WHERE upper(package) = upper(?) ORDER BY file, line_start",
+            [package_name],
+        ).fetchall()
+
+        if not rows:
+            return None
+
+        flags = con.execute(
+            "SELECT cpp_flag, description FROM package_options WHERE upper(package_name) = upper(?)",
+            [package_name],
+        ).fetchall()
+
+    subroutines = [{"name": r[1], "file": r[2], "line_start": r[3], "line_end": r[4]} for r in rows]
+    files = sorted({r[2] for r in rows})
+
+    return {
+        "package": rows[0][2].split("/")[0] if "/" in rows[0][2] else package_name,
+        "name": package_name,
+        "files": files,
+        "subroutine_count": len(subroutines),
+        "subroutines": subroutines,
+        "cpp_flags": [{"cpp_flag": r[0], "description": r[1]} for r in flags],
+    }
+
+
 def get_doc_source(
     file: str,
     section: str,

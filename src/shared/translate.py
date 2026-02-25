@@ -1,8 +1,8 @@
-"""Translate physical lab parameters to MITgcm namelist values.
+"""Translate physical lab/ocean parameters to model namelist values.
 
 Given tank geometry, rotation rate, and fluid properties, returns a dict
-structured around MITgcm namelist groups plus derived intermediate quantities
-and advisory notes.
+structured around common namelist groups plus derived intermediate quantities
+and advisory notes.  Used by both MITgcm and FESOM2 MCP servers.
 
 pint is used internally for all physics calculations; units are stripped
 before populating the returned dict (MCP/JSON boundary accepts plain floats only).
@@ -28,7 +28,7 @@ def translate_lab_params(
     kappa: float = 1.4e-7,
     alpha: float = 2e-4,
 ) -> dict:
-    """Translate physical lab parameters to MITgcm namelist values.
+    """Translate physical lab/ocean parameters to model namelist values.
 
     Parameters
     ----------

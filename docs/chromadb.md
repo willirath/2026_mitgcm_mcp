@@ -189,7 +189,7 @@ for dist, name, pkg in sorted(seen.values()):
 
 ## `mitgcm_docs` collection
 
-Built by `src/docs_indexer/` and populated with `pixi run embed-docs`.
+Built by `src/mitgcm/docs_indexer/` and populated with `pixi run embed-docs`.
 
 ### Content
 

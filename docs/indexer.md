@@ -1,7 +1,7 @@
 # Indexer
 
 The indexer reads MITgcm Fortran source files and writes a structured code
-graph to DuckDB. It lives in `src/indexer/` and consists of three modules with
+graph to DuckDB. It lives in `src/mitgcm/indexer/` and consists of three modules with
 a clear one-directional dependency: `pipeline` drives `extract`, which returns
 data; `schema` is used by `pipeline` to set up and connect to the database.
 
@@ -148,7 +148,7 @@ pixi run index
 4. Add a matching column or table to `schema.py` DDL.
 5. In `pipeline.run()`, add the corresponding `INSERT` loop after the existing
    ones.
-6. Add tests in `tests/indexer/test_extract.py` covering the normal case and
+6. Add tests in `tests/mitgcm/indexer/test_extract.py` covering the normal case and
    at least one edge case (continuation lines, comments, etc.).
 
 ### Changing which directories are indexed

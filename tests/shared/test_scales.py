@@ -3,7 +3,7 @@
 import math
 import pytest
 
-from src.mitgcm.domain.scales import check_scales
+from src.shared.scales import check_scales
 
 
 def _base_call(**kwargs):

@@ -143,7 +143,7 @@ declarations.
 
 ## `test_pipeline.py` — embedder chunking tests
 
-Covers `_chunk_text` and `_doc_chunks` from `src/embedder/pipeline.py`.
+Covers `_chunk_text` and `_doc_chunks` from `src/mitgcm/embedder/pipeline.py`.
 All tests use synthetic strings — no DuckDB or ollama required.
 
 | Test | What it verifies |

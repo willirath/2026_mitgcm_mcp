@@ -10,14 +10,14 @@ only Fortran source code.
 ## Components
 
 ```
-src/docs_indexer/
+src/mitgcm/docs_indexer/
 ├── __init__.py
 ├── parse.py       RST → plain-text sections
 └── pipeline.py    sections → ChromaDB mitgcm_docs collection
 ```
 
-`search_docs` in `src/tools.py` queries the collection.
-`search_docs_tool` in `src/server.py` exposes it via MCP.
+`search_docs` in `src/mitgcm/tools.py` queries the collection.
+`search_docs_tool` in `src/mitgcm/server.py` exposes it via MCP.
 
 ## RST parsing
 
@@ -79,7 +79,7 @@ section text).
 
 ## MCP tool
 
-`search_docs_tool(query, top_k=5)` — registered in `src/server.py`. Takes a
+`search_docs_tool(query, top_k=5)` — registered in `src/mitgcm/server.py`. Takes a
 natural-language query and returns matching documentation sections.
 
 ## Limitations

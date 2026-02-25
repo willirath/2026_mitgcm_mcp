@@ -1,6 +1,6 @@
 # Domain Knowledge Layer
 
-The domain knowledge layer (`src/domain/`) provides experiment-design
+The domain knowledge layer (`src/mitgcm/domain/`) provides experiment-design
 reasoning on top of the MITgcm code graph and semantic index.  Where the
 code-graph tools answer *how MITgcm works*, the domain knowledge tools
 answer *how to configure it for a given experiment*.
@@ -10,7 +10,7 @@ answer *how to configure it for a given experiment*.
 ## Module layout
 
 ```
-src/domain/
+src/mitgcm/domain/
 ├── __init__.py      re-exports public functions
 ├── translate.py     translate_lab_params — lab geometry → namelist values
 ├── scales.py        check_scales — dimensionless numbers and regime flags
@@ -225,7 +225,7 @@ CFL before use.
 
 ## MCP tools
 
-Four MCP tools wrap the domain functions in `src/server.py`:
+Four MCP tools wrap the domain functions in `src/mitgcm/server.py`:
 
 | Tool | Wraps |
 |---|---|
