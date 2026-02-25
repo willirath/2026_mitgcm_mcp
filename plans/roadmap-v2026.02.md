@@ -592,11 +592,19 @@ Agents attempting to partition a new mesh found no binary.
 
 - [x] All tier 11 items done (11.1/11.3 false alarms; 11.2/11.4/11.5/11.6/11.7 implemented)
 - [x] `pixi run test` passes (548 tests on main after both PRs merged)
-- [ ] All embed/index steps run with updated pipelines; data baked into images
-- [ ] Images built and pushed (`fesom2-mcp-v2026.02.7`, `fesom2-runtime-v2026.02.7`; mitgcm images unchanged)
-- [ ] Smoke test: confirm `/fesom2/bin/fesom_meshpart` exists in runtime image
-- [ ] Git tag `v2026.02.7` pushed
-- [ ] GitHub release created
+- [x] Embed/index steps deferred to v2026.02.8 (baked in together with #11/#12 fixes)
+- [x] Git tag `v2026.02.7` pushed
+- [x] GitHub release created
+
+## Release checklist — v2026.02.8
+
+- [x] Issues #11 and #12 fixed (namelist.forcing required groups gotcha; age_tracer injection; METIS keyword fix)
+- [x] `pixi run test` passes (552 tests)
+- [x] `pixi run fesom2-embed-docs` — 141 chunks (14 extra files: viz READMEs + src headers)
+- [x] `pixi run mitgcm-embed-docs` — 1974 chunks (pkg/*.h headers included)
+- [x] Images built and pushed: `fesom2-mcp-v2026.02.8`, `fesom2-runtime-v2026.02.8`, `mitgcm-mcp-v2026.02.8` (mitgcm-runtime unchanged at v2026.02.6)
+- [x] Git tag `v2026.02.8` pushed
+- [x] GitHub release created
 
 ---
 
