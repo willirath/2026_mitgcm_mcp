@@ -145,13 +145,11 @@ def test_build_catalogue_multiple_experiments(tmp_path):
     assert classes["exp_b"] == "atmosphere"
 
 
-def test_build_catalogue_files_listing(tmp_path):
+def test_build_catalogue_no_files_field(tmp_path):
+    """Catalogue entries should not include a file listing (too verbose for MCP)."""
     _make_experiment(tmp_path, "exp_files", ["gfd"], _SIZE_H, _DATA_OCEAN)
     catalogue = build_catalogue(dirs=[tmp_path])
-    files = catalogue[0]["files"]
-    assert "code/packages.conf" in files
-    assert "code/SIZE.h" in files
-    assert "input/data" in files
+    assert "files" not in catalogue[0]
 
 
 def test_build_catalogue_skips_non_directories(tmp_path):

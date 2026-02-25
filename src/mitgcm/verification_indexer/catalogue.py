@@ -44,7 +44,6 @@ def build_catalogue(dirs: list[Path] | None = None) -> list[dict]:
       nonhydrostatic: bool
       free_surface  : bool
       eos_type      : str
-      files         : list[str]  — all files relative to the experiment root
     """
     dirs = dirs or EXPERIMENT_DIRS
     entries = []
@@ -80,13 +79,6 @@ def build_catalogue(dirs: list[Path] | None = None) -> list[dict]:
             entry["nonhydrostatic"] = physics.get("nonhydrostatic", False)
             entry["free_surface"] = physics.get("free_surface", True)
             entry["eos_type"] = physics.get("eos_type", "LINEAR")
-
-            # File listing — all files relative to the experiment root
-            entry["files"] = sorted(
-                p.relative_to(exp_dir).as_posix()
-                for p in exp_dir.rglob("*")
-                if p.is_file()
-            )
 
             entries.append(entry)
 
