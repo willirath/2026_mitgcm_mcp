@@ -488,7 +488,7 @@ in `docs/release.md` prerequisites but was skipped.
 - [x] Re-run `pixi run mitgcm-embed-verification` (909 chunks + 65 experiment
   records in catalogue JSON confirmed)
 - [x] Rebuild and push `mitgcm-mcp-v2026.02.6`
-- [ ] Re-run A6 smoke test
+- [x] Re-run A6 smoke test (PASS — run 3 confirmed 63 experiments returned)
 
 ### 10.4 Spec fix: B2 used wrong parameter name
 
@@ -526,16 +526,13 @@ FESOM2 module names don't follow file-name conventions. Use
 
 ---
 
-## Release checklist
+## Release checklist — v2026.02.6
 
-- [x] All tier 1–3 items done
-- [x] `pixi run test` passes (355 tests)
-- [x] Tier 4 done (D5, EXACT_CONSERV, PHIHYD, Tier 5 HIGH items)
-- [x] Tiers 5–9 done
-- [x] `pixi run embed-verification` run and data baked into image
-- [x] Both images built and pushed (`mcp-v2026.02.5`, `runtime-v2026.02.5`)
-- [x] GitHub release created
-- [x] Git tag pushed
-- [x] `docs/release.md` VERSION updated
-- [x] `.mcp.json` updated
-- [x] `README.md` and `docs/mcp-server.md` install commands updated
+- [x] All tier 1–10 items done
+- [x] `pixi run test` passes (527 tests)
+- [x] All embed/index steps run; data baked into images
+- [x] All 4 images built and pushed (`mitgcm-mcp-v2026.02.6`, `mitgcm-runtime-v2026.02.6`, `fesom2-mcp-v2026.02.6`, `fesom2-runtime-v2026.02.6`)
+- [x] Smoke tests: all critical rows pass (runs 1–3, two agents)
+- [ ] PR merged to main
+- [ ] Git tag `v2026.02.6` pushed
+- [ ] GitHub release created
