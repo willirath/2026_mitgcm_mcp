@@ -44,7 +44,7 @@ the embedding model, and pre-built indices).
 
 ---
 
-## Example — cross-model comparison
+## Example — cross-model comparison (GM)
 
 ```
 User: How does GM eddy parameterisation differ between MITgcm and FESOM2?
