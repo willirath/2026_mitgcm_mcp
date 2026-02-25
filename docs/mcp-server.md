@@ -1,29 +1,30 @@
-# MCP server
+# MCP server (MITgcm)
 
-`src/server.py` wraps all tools in an MCP server using FastMCP (bundled in
-the official `mcp` SDK). It communicates over stdio so Claude Code picks it
-up with zero network configuration.
+`src/mitgcm/server.py` exposes MITgcm code-navigation tools via FastMCP
+over stdio. For the FESOM2 equivalent see `src/fesom2/server.py`; the
+install instructions and tool reference for FESOM2 are in `README.md`.
 
 ## Install (users)
 
 **Claude Code:**
 ```bash
 claude mcp add --transport stdio --scope user mitgcm -- \
-  docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.5
+  docker run --rm -i ghcr.io/willirath/ogcmcp:mitgcm-mcp-v2026.02.6
 ```
 
 **Codex CLI:**
 ```bash
-codex mcp add mitgcm -- docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.5
+codex mcp add mitgcm -- docker run --rm -i ghcr.io/willirath/ogcmcp:mitgcm-mcp-v2026.02.6
 ```
 
 ## Development use
 
 ```sh
-pixi run serve
+pixi run mitgcm-serve   # MITgcm MCP server
+pixi run fesom2-serve   # FESOM2 MCP server
 ```
 
-The `.mcp.json` in the repo root points Claude Code at `pixi run serve`
+The `.mcp.json` in the repo root points Claude Code at these tasks
 when working inside the repository.
 
 ## Tools

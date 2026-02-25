@@ -1,0 +1,84 @@
+! Atmospheric forcing — not used for this experiment (toy_ocean = .true.).
+! FESOM2 opens this file unconditionally at startup; contents are not read
+! when toy_ocean = .true.
+
+&forcing_exchange_coeff
+Ce_atm_oce = 0.00175
+Ch_atm_oce = 0.00175
+Cd_atm_oce = 0.001
+Ce_atm_ice = 0.00175
+Ch_atm_ice = 0.00175
+Cd_atm_ice = 0.0012
+Swind       = 0.0
+/
+
+&forcing_bulk
+AOMIP_drag_coeff   = .false.
+ncar_bulk_formulae = .true.
+ncar_bulk_z_wind   = 10.0
+ncar_bulk_z_tair   = 10.0
+ncar_bulk_z_shum   = 10.0
+/
+
+&land_ice
+use_landice_water = .false.
+landice_start_mon = 5
+landice_end_mon   = 10
+fwf_path          = ''
+/
+
+&age_tracer
+use_age_tracer  = .false.
+use_age_mask    = .false.
+age_tracer_path = ''
+age_start_year  = 2000
+/
+
+&nam_sbc
+nm_xwind_file = ''
+nm_ywind_file = ''
+nm_xstre_file = ''
+nm_ystre_file = ''
+nm_humi_file  = ''
+nm_qsr_file   = ''
+nm_qlw_file   = ''
+nm_tair_file  = ''
+nm_prec_file  = ''
+nm_snow_file  = ''
+nm_xwind_var  = 'uas'
+nm_ywind_var  = 'vas'
+nm_xstre_var  = 'uas'
+nm_ystre_var  = 'vas'
+nm_humi_var   = 'huss'
+nm_qsr_var    = 'rsds'
+nm_qlw_var    = 'rlds'
+nm_tair_var   = 'tas'
+nm_prec_var   = 'prra'
+nm_snow_var   = 'prsn'
+nm_mslp_var   = 'psl'
+nm_nc_iyear   = 1900
+nm_nc_imm     = 1
+nm_nc_idd     = 1
+nm_nc_freq    = 1
+nm_nc_tmid    = 0
+y_perpetual   = .false.
+l_xwind       = .true.
+l_ywind       = .true.
+l_humi        = .true.
+l_qsr         = .true.
+l_qlw         = .true.
+l_tair        = .true.
+l_prec        = .true.
+l_mslp        = .false.
+l_cloud       = .false.
+l_snow        = .true.
+runoff_data_source = 'NONE'
+nm_runoff_file     = ''
+sss_data_source    = 'NONE'
+nm_sss_data_file   = ''
+chl_data_source    = 'None'
+chl_const          = 0.1
+use_runoff_mapper  = .false.
+runoff_basins_file = ''
+runoff_radius      = 500000.
+/

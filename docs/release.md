@@ -1,12 +1,19 @@
 # Release process
 
-How to build, publish, and verify a new `ghcr.io/willirath/2026-mitgcm-mcp` release.
+How to build, publish, and verify a new `ghcr.io/willirath/ogcmcp` release.
+
 
 ---
 
 ## Prerequisites
 
-- `data/` populated — run `pixi run index`, `pixi run embed`, `pixi run embed-docs` if needed
+- `data/mitgcm/` populated — run if needed:
+  ```bash
+  pixi run mitgcm-index
+  pixi run mitgcm-embed
+  pixi run mitgcm-embed-docs
+  pixi run mitgcm-embed-verification
+  ```
 - Docker Desktop running
 - `gh` CLI authenticated (`gh auth status`)
 - GHCR credentials: `echo $GITHUB_TOKEN | docker login ghcr.io -u willirath --password-stdin`
@@ -25,16 +32,16 @@ The MICRO is assigned when the release is actually cut.
 
 ## 1. Build and push the runtime image (multi-arch)
 
-The runtime image (`ghcr.io/willirath/2026-mitgcm-mcp:runtime-*`) contains
+The runtime image (`ghcr.io/willirath/ogcmcp:mitgcm-runtime-*`) contains
 gfortran + MPICH + NetCDF-Fortran + the MITgcm source tree baked in at
 `/MITgcm`. Agents use it as a `FROM` base in their experiment Dockerfiles.
 
 ```bash
-VERSION=v2026.02.5
+VERSION=v2026.02.6
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  -t ghcr.io/willirath/2026-mitgcm-mcp:runtime-${VERSION} \
-  -t ghcr.io/willirath/2026-mitgcm-mcp:runtime-latest \
+  -t ghcr.io/willirath/ogcmcp:mitgcm-runtime-${VERSION} \
+  -t ghcr.io/willirath/ogcmcp:mitgcm-runtime-latest \
   -f docker/mitgcm/Dockerfile \
   --push .
 ```
@@ -45,16 +52,16 @@ Build time: ~3 min (shallow git clone of MITgcm + apt packages).
 
 ## 2. Build and push the MCP image (multi-arch)
 
-The MCP image (`ghcr.io/willirath/2026-mitgcm-mcp:mcp-*`) bundles Ollama,
+The MCP image (`ghcr.io/willirath/ogcmcp:mitgcm-mcp-*`) bundles Ollama,
 the embedding model, Python runtime, and pre-built indices from `data/`.
 
 ```bash
-VERSION=v2026.02.5
+VERSION=v2026.02.6
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  -t ghcr.io/willirath/2026-mitgcm-mcp:mcp-${VERSION} \
-  -t ghcr.io/willirath/2026-mitgcm-mcp:mcp-latest \
-  -f docker/mcp/Dockerfile \
+  -t ghcr.io/willirath/ogcmcp:mitgcm-mcp-${VERSION} \
+  -t ghcr.io/willirath/ogcmcp:mitgcm-mcp-latest \
+  -f docker/mitgcm-mcp/Dockerfile \
   --push .
 ```
 
@@ -69,12 +76,12 @@ Build time: ~8 min on first run (model download), ~2 min on subsequent runs.
 For local development only (single-arch, not pushed):
 
 ```bash
-pixi run build-mcp-image
+pixi run build-mitgcm-mcp-image
 ```
 
 ### Set package visibility to public
 
-GitHub → profile → Packages → `2026-mitgcm-mcp` → Package settings →
+GitHub → profile → Packages → `ogcmcp` → Package settings →
 Change visibility → Public.
 
 This must be done once before the first release; after that the package
@@ -82,71 +89,35 @@ stays public across re-pushes.
 
 ---
 
-## 3. Package the experiment archive
+## 3. Create the GitHub release
 
 ```bash
-pixi run package-rotating-convection
-```
-
-Creates `rotating_convection.tar.gz` (~8 MB) containing:
-
-```
-rotating_convection/
-├── README.md
-├── gen.py
-├── plot.py
-├── T_section.png
-├── code/
-└── input/
-```
-
-The archive does not include `build/` or `run/` (gitignored). Users
-unpack it, run `gen.py` if they want to regenerate the input files,
-then use `pixi run build-rotating-convection` /
-`pixi run run-rotating-convection` against the `mitgcm:latest` image.
-
-The `package-rotating-convection` pixi task runs:
-
-```bash
-tar -czf rotating_convection.tar.gz \
-  -C experiments \
-  --exclude rotating_convection/build \
-  --exclude rotating_convection/run \
-  rotating_convection
-```
-
----
-
-## 4. Create the GitHub release
-
-```bash
-VERSION=v2026.02.5
+VERSION=v2026.02.6
 gh release create ${VERSION} \
-  --title "MITgcm MCP ${VERSION}" \
-  --notes "MCP image: \`ghcr.io/willirath/2026-mitgcm-mcp:mcp-${VERSION}\`
-Runtime image: \`ghcr.io/willirath/2026-mitgcm-mcp:runtime-${VERSION}\`
+  --title "OGCMCP ${VERSION}" \
+  --notes "MCP image: \`ghcr.io/willirath/ogcmcp:mitgcm-mcp-${VERSION}\`
+Runtime image: \`ghcr.io/willirath/ogcmcp:mitgcm-runtime-${VERSION}\`
 
 Install MCP server:
 \`\`\`bash
 claude mcp add --transport stdio --scope user mitgcm -- \\
-  docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-${VERSION}
+  docker run --rm -i ghcr.io/willirath/ogcmcp:mitgcm-mcp-${VERSION}
 \`\`\`
 
-MITgcm source: submodule pinned at \`decd05a\` (checkpoint69k)." \
-  rotating_convection.tar.gz
+MITgcm source: submodule pinned at \`decd05a\` (checkpoint69k)."
 ```
 
 ---
 
-## 5. Smoke test
+## 4. Smoke test
 
 On a clean machine (or after removing the local image):
 
 ```bash
-docker rmi ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.5 2>/dev/null || true
+docker rmi ghcr.io/willirath/ogcmcp:mitgcm-mcp-v2026.02.6 2>/dev/null || true
 
 claude mcp add --transport stdio --scope user mitgcm -- \
-  docker run --rm -i ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.5
+  docker run --rm -i ghcr.io/willirath/ogcmcp:mitgcm-mcp-v2026.02.6
 ```
 
 Then in a Claude Code session:
@@ -159,13 +130,51 @@ Expected: `namelist_to_code_tool` returns a result referencing `cg3dMaxIters`.
 
 ---
 
-## 6. Git tag
+## 5. Git tag
 
 ```bash
-VERSION=v2026.02.5
+VERSION=v2026.02.6
 git tag -a ${VERSION} -m "Release ${VERSION}"
 git push origin ${VERSION}
 ```
+
+---
+
+## Version variable gotcha
+
+Shell variable expansion in `-t` flags is fragile when commands run in
+subshells or scripts. `VERSION=v2026.02.6 && docker buildx build -t ...-${VERSION}` has
+produced empty tags (`fesom2-mcp-`, `mitgcm-mcp-`) when the variable was not
+set in the executing shell.
+
+**Always hardcode the version string directly in `-t` flags:**
+
+```bash
+# Good — version string is literal, cannot expand to empty
+docker buildx build \
+  -t ghcr.io/willirath/ogcmcp:mitgcm-mcp-v2026.02.6 \
+  -t ghcr.io/willirath/ogcmcp:mitgcm-mcp-latest \
+  ...
+
+# Risky — $VERSION may be empty in a subshell
+VERSION=v2026.02.6
+docker buildx build -t ghcr.io/willirath/ogcmcp:mitgcm-mcp-${VERSION} ...
+```
+
+**After every push, verify tags in the registry before proceeding:**
+
+```bash
+gh api /user/packages/container/ogcmcp/versions --paginate | \
+  python3 -c "
+import json,sys
+for v in json.load(sys.stdin):
+    t = v.get('metadata',{}).get('container',{}).get('tags',[])
+    if t: print(sorted(t))
+"
+```
+
+Expected output: 4 lines, each with exactly `['{backend}-{type}-latest', '{backend}-{type}-vYYYY.MM.MICRO']`.
+If any tag ends with `-` (empty version) or `latest` points to the wrong digest, delete the bad version in GitHub and retag with `docker buildx imagetools create`.
 
 ---
 
@@ -183,7 +192,9 @@ amd64 QEMU GPG issue.
 
 | Image tag prefix | Purpose | Base | Approx. size |
 |---|---|---|---|
-| `ghcr.io/willirath/2026-mitgcm-mcp:mcp-*` | User-facing MCP server | `python:3.13-slim` | ~515 MB |
-| `ghcr.io/willirath/2026-mitgcm-mcp:runtime-*` | MITgcm build environment for agent Dockerfiles | `debian:bookworm-slim` | ~300 MB |
+| `ghcr.io/willirath/ogcmcp:mitgcm-mcp-*` | MITgcm MCP server | `python:3.13-slim` | ~515 MB |
+| `ghcr.io/willirath/ogcmcp:mitgcm-runtime-*` | MITgcm build environment for agent Dockerfiles | `debian:bookworm-slim` | ~300 MB |
+| `ghcr.io/willirath/ogcmcp:fesom2-mcp-*` | FESOM2 MCP server | `python:3.13-slim` | ~600 MB |
+| `ghcr.io/willirath/ogcmcp:fesom2-runtime-*` | FESOM2 runtime (experiment execution) | `debian:bookworm-slim` | ~1.4 GB |
 
 Pinned digests for current images are in the respective Dockerfiles under `docker/`.

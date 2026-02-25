@@ -2,7 +2,11 @@
   "mcpServers": {
     "mitgcm": {
       "command": "docker",
-      "args": ["run", "--rm", "-i", "ghcr.io/willirath/2026-mitgcm-mcp:mcp-v2026.02.5"]
+      "args": ["run", "--rm", "-i", "ghcr.io/willirath/ogcmcp:mitgcm-mcp-v2026.02.6"]
+    },
+    "fesom2": {
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "ghcr.io/willirath/ogcmcp:fesom2-mcp-v2026.02.6"]
     }
   }
 }

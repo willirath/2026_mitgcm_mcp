@@ -442,16 +442,97 @@ Container currently runs as root. Add a dedicated non-root user.
 
 ---
 
-## Release checklist
+---
 
-- [x] All tier 1–3 items done
-- [x] `pixi run test` passes (355 tests)
-- [x] Tier 4 done (D5, EXACT_CONSERV, PHIHYD, Tier 5 HIGH items)
-- [x] Tiers 5–9 done
-- [x] `pixi run embed-verification` run and data baked into image
-- [x] Both images built and pushed (`mcp-v2026.02.5`, `runtime-v2026.02.5`)
-- [x] GitHub release created
-- [x] Git tag pushed
-- [x] `docs/release.md` VERSION updated
-- [x] `.mcp.json` updated
-- [x] `README.md` and `docs/mcp-server.md` install commands updated
+## Tier 10 — v2026.02.6 smoke-test defects
+
+Three confirmed failures from `smoke-test-v2026.02.6-claude.md` and
+`smoke-test-v2026.02.6-codex.md`. One spec fix.
+
+### 10.1 DEF-5: `list_setups_tool` returns empty (Dockerfile fix)
+
+`list_setups()` calls `_list_setups(Path("FESOM2"))` at runtime, but
+`FESOM2/config/` and `FESOM2/setups/` are never copied into the Docker
+image — only `src/` and `data/fesom2/`. Both directories resolve to
+non-existent paths, silently returning `[]`.
+
+- [x] Add `COPY FESOM2/config/ /app/FESOM2/config/` and
+  `COPY FESOM2/setups/ /app/FESOM2/setups/` to `docker/fesom2-mcp/Dockerfile`
+- [x] Rebuild and push `fesom2-mcp-v2026.02.6`
+- [ ] Re-run B5 smoke test
+
+### 10.2 DEF-4: `find_modules_tool` returns empty (build procedure)
+
+`find_modules_tool` queries the `modules` table in the baked DuckDB.
+The modules table was empty in the shipped image — `fesom2-index` was
+not run (or a stale DuckDB was used) before building. Locally the DuckDB
+has 182 modules and 938 subroutines.
+
+- [x] Add `fesom2-index` to `docker/fesom2-mcp/Dockerfile` comment
+  (was only listing embed tasks)
+- [x] Re-run `pixi run fesom2-index` before image rebuild and confirm
+  `modules` count > 0 (182 modules confirmed)
+- [x] Rebuild and push `fesom2-mcp-v2026.02.6`
+
+### 10.3 DEF-1: `list_verification_experiments_tool` returns empty (build procedure)
+
+`list_verification_experiments_tool` queries the `mitgcm_verification`
+ChromaDB collection. Empty result implies `mitgcm-embed-verification`
+was not run before the `mitgcm-mcp` image was built. The step is listed
+in `docs/release.md` prerequisites but was skipped.
+
+- [x] Root cause: `list_verification_experiments` read `MITgcm/verification/`
+  live; that directory is not in the MCP image. Fixed by saving catalogue to
+  `data/mitgcm/verification_catalogue.json` in the embed pipeline; tools.py
+  loads from JSON when present.
+- [x] Re-run `pixi run mitgcm-embed-verification` (909 chunks + 65 experiment
+  records in catalogue JSON confirmed)
+- [x] Rebuild and push `mitgcm-mcp-v2026.02.6`
+- [x] Re-run A6 smoke test (PASS — run 3 confirmed 63 experiments returned)
+
+### 10.4 Spec fix: B2 used wrong parameter name
+
+`plans/smoke-test-v2026.02.6.md` B2 said "Returns `K_GM`" but the
+actual FESOM2 parameter is `K_GM_max` / `K_GM_min`. Claude's B2 "FAIL"
+was a false alarm.
+
+- [x] Update B2 criterion: `K_GM` → `K_GM_max` in smoke test plan
+- [x] Update `docs/fesom2-release.md` smoke test description to match
+
+### 10.5 Pixi task naming inconsistency
+
+`build-image` and `build-mcp-image` lack backend prefixes unlike
+`build-fesom2-image` and `build-fesom2-mcp-image`. References scattered
+across `docs/runtime.md`, `docs/release.md`, `docs/getting-started-developer.md`.
+Also stale: `pixi run serve` in `docs/mcp-server.md`,
+`pixi run index` in `CLAUDE.md`.
+
+- [x] Rename `build-image` → `build-mitgcm-runtime-image` in `pixi.toml`
+- [x] Rename `build-mcp-image` → `build-mitgcm-mcp-image` in `pixi.toml`
+- [x] Update all references in `docs/` and `CLAUDE.md`
+- [x] Fix stale `pixi run serve` → `pixi run mitgcm-serve` / `fesom2-serve`
+  in `docs/mcp-server.md`
+- [x] Fix stale `pixi run index` → `pixi run mitgcm-index` in `CLAUDE.md`
+
+### 10.6 Spec fix: B3 used filename as module name
+
+`find_modules_tool("oce_fer_gm")` always returns empty — `oce_fer_gm` is a
+filename, not a MODULE name. The file defines `module fer_solve_interface`.
+FESOM2 module names don't follow file-name conventions. Use
+`find_subroutines_tool` + `get_source_tool` to navigate GM/Redi code.
+
+- [x] Update B3 pass criterion: use `find_subroutines_tool("init_Redi_GM")`
+  and `get_source_tool` for USE dependency list
+
+---
+
+## Release checklist — v2026.02.6
+
+- [x] All tier 1–10 items done
+- [x] `pixi run test` passes (527 tests)
+- [x] All embed/index steps run; data baked into images
+- [x] All 4 images built and pushed (`mitgcm-mcp-v2026.02.6`, `mitgcm-runtime-v2026.02.6`, `fesom2-mcp-v2026.02.6`, `fesom2-runtime-v2026.02.6`)
+- [x] Smoke tests: all critical rows pass (runs 1–3, two agents)
+- [ ] PR merged to main
+- [ ] Git tag `v2026.02.6` pushed
+- [ ] GitHub release created

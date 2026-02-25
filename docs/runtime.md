@@ -11,9 +11,9 @@ at run time. The same image translates directly to Singularity on HPC.
 
 - Docker >= 20 installed and running
 - MITgcm submodule initialised (`git submodule update --init`)
-- Image built: `pixi run build-image`
+- Image built: `pixi run build-mitgcm-runtime-image`
 
-The `build-image` task runs:
+The `build-mitgcm-runtime-image` task runs:
 
 ```
 docker build --platform linux/amd64 -t mitgcm:latest .
@@ -68,7 +68,7 @@ are owned by the calling user.
 ### 1. Build the Docker image
 
 ```
-pixi run build-image
+pixi run build-mitgcm-runtime-image
 ```
 
 This builds `mitgcm:latest` with gfortran, OpenMPI, and NetCDF-Fortran from

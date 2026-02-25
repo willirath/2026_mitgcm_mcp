@@ -7,7 +7,7 @@ Working notes for Claude Code on conventions in this project.
 - **pixi** for all Python dependencies — conda-forge for system tools, PyPI for Python packages
 - **No brew** — keep everything OS-agnostic
 - **Docker Compose** for service dependencies (currently: ollama embedding server)
-- Convenience tasks in `pixi.toml`: `pixi run test`, `pixi run index`
+- Convenience tasks in `pixi.toml`: `pixi run test`, `pixi run mitgcm-index`, `pixi run fesom2-index`
 
 ## Project structure
 

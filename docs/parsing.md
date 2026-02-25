@@ -48,7 +48,7 @@ all CPP flags active at any point within its line range.
 ## Entry point
 
 ```sh
-pixi run python -m src.indexer.pipeline
+pixi run mitgcm-index
 ```
 
-Produces `index.duckdb` in the project root.
+Produces `data/mitgcm/index.duckdb`.

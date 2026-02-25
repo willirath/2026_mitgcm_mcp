@@ -1,0 +1,27 @@
+&dynamics_visc
+visc_gamma0       = 0.005      ! background viscosity [m/s]
+visc_gamma1       = 0.3        ! flow-aware viscosity [dimensionless]
+visc_gamma2       = 0.20       ! additional viscosity [s/m]
+visc_easybsreturn = 0.0
+opt_visc          = 5          ! kinematic backscatter scheme
+check_opt_visc    = .false.
+use_ivertvisc     = .true.
+/
+
+&dynamics_general
+momadv_opt         = 2
+use_freeslip       = .false.
+use_wsplit         = .false.
+wsplit_maxcfl      = 1.0
+ldiag_KE           = .false.
+AB_order           = 2
+use_ssh_se_subcycl = .false.
+se_BTsteps         = 50
+se_BTtheta         = 0.14
+se_bottdrag        = .true.
+se_bdrag_si        = .true.
+se_visc            = .true.
+se_visc_gamma0     = 10
+se_visc_gamma1     = 19500
+se_visc_gamma2     = 0
+/

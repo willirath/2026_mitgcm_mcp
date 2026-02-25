@@ -1,26 +1,34 @@
 [workspace]
 authors = ["Willi Rath <wrath@geomar.de>"]
 channels = ["conda-forge"]
-name = "2026-dtg"
+name = "ogcmcp"
 platforms = ["osx-arm64"]
 version = "0.1.0"
 
 [tasks]
 test = "pytest tests/ -v"
-index = "python -m src.indexer.pipeline"
-embed = "nice -n 10 python -u -m src.embedder.pipeline"
-embed-docs = "python -u -m src.docs_indexer.pipeline"
-embed-verification = "python -u -m src.verification_indexer.pipeline"
-serve = "python -m src.server"
-build-image    = "docker build --platform linux/amd64,linux/arm64 -t mitgcm:latest -f docker/mitgcm/Dockerfile ."
-build-mcp-image = "docker build --platform linux/amd64 -t mitgcm-mcp:latest -f docker/mcp/Dockerfile ."
-package-rotating-convection = "tar -czf rotating_convection.tar.gz -C experiments --exclude rotating_convection/build --exclude rotating_convection/run rotating_convection"
+mitgcm-index = "python -m src.mitgcm.indexer.pipeline"
+mitgcm-embed = "nice -n 10 python -u -m src.mitgcm.embedder.pipeline"
+mitgcm-embed-docs = "python -u -m src.mitgcm.docs_indexer.pipeline"
+mitgcm-embed-verification = "python -u -m src.mitgcm.verification_indexer.pipeline"
+mitgcm-serve = "python -m src.mitgcm.server"
+fesom2-index = "python -m src.fesom2.indexer.pipeline"
+fesom2-embed = "nice -n 10 python -u -m src.fesom2.embedder.pipeline"
+fesom2-embed-docs = "python -u -m src.fesom2.embedder.docs_pipeline"
+fesom2-embed-namelists = "python -u -m src.fesom2.embedder.nml_pipeline"
+fesom2-serve = "python -m src.fesom2.server"
+build-mitgcm-runtime-image = "docker build --platform linux/amd64,linux/arm64 -t mitgcm:latest -f docker/mitgcm/Dockerfile ."
+build-mitgcm-mcp-image = "docker build --platform linux/amd64 -t ogcmcp:latest -f docker/mitgcm-mcp/Dockerfile ."
+build-fesom2-runtime-image = "docker build --platform linux/amd64,linux/arm64 -t fesom2:latest -f docker/fesom2/Dockerfile ."
+build-fesom2-mcp-image = "docker build --platform linux/amd64 -t ogcmcp-fesom2:latest -f docker/fesom2-mcp/Dockerfile ."
 setup-tutorial = "bash scripts/setup-tutorial.sh"
-build-tutorial = "bash scripts/build-experiment.sh experiments/tutorial_rotating_tank"
-run-tutorial   = "bash scripts/run-experiment.sh experiments/tutorial_rotating_tank"
-gen-rotating-convection   = "python experiments/rotating_convection/gen.py"
-build-rotating-convection = "bash scripts/build-experiment.sh experiments/rotating_convection"
-run-rotating-convection   = "bash scripts/run-experiment.sh experiments/rotating_convection"
+build-tutorial = "bash scripts/build-experiment.sh experiments/mitgcm/tutorial_rotating_tank"
+run-tutorial   = "bash scripts/run-experiment.sh experiments/mitgcm/tutorial_rotating_tank"
+gen-rotating-convection   = "python experiments/mitgcm/rotating_convection/gen.py"
+build-rotating-convection = "bash scripts/build-experiment.sh experiments/mitgcm/rotating_convection"
+run-rotating-convection   = "bash scripts/run-experiment.sh experiments/mitgcm/rotating_convection"
+run-fesom2-toy-neverworld2  = "bash experiments/fesom2/toy_neverworld2/run.sh"
+plot-fesom2-toy-neverworld2 = "python experiments/fesom2/toy_neverworld2/plot.py"
 
 [dependencies]
 python = "3.13.*"

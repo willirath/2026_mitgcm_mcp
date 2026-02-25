@@ -1,7 +1,7 @@
 # Indexer
 
 The indexer reads MITgcm Fortran source files and writes a structured code
-graph to DuckDB. It lives in `src/indexer/` and consists of three modules with
+graph to DuckDB. It lives in `src/mitgcm/indexer/` and consists of three modules with
 a clear one-directional dependency: `pipeline` drives `extract`, which returns
 data; `schema` is used by `pipeline` to set up and connect to the database.
 
@@ -9,7 +9,7 @@ data; `schema` is used by `pipeline` to set up and connect to the database.
 
 ### `schema.py` — database setup
 
-Defines `DB_PATH` (`data/index.duckdb`) and `DDL` (a multi-statement string
+Defines `DB_PATH` (`data/mitgcm/index.duckdb`) and `DDL` (a multi-statement string
 that creates all tables with `CREATE TABLE IF NOT EXISTS`). Exposes a single
 function:
 
@@ -114,7 +114,7 @@ MITgcm/.F and .F90 files
    pipeline.run()         iterates files, calls extract_file
         |
         v
-  schema.connect()        opens / creates data/index.duckdb
+  schema.connect()        opens / creates data/mitgcm/index.duckdb
         |
         v
   INSERT statements       subroutines, calls, namelist_refs,
@@ -124,17 +124,28 @@ MITgcm/.F and .F90 files
 ## Running the indexer
 
 ```sh
-pixi run index
+pixi run mitgcm-index
 ```
 
-This invokes `python -m src.indexer.pipeline`. The MITgcm source tree must
-exist at `MITgcm/` relative to the project root (it is a git submodule).
-Output is written to `data/index.duckdb`. To rebuild from scratch:
+The MITgcm source tree must exist at `MITgcm/` (it is a git submodule;
+run `git submodule update --init MITgcm` on first checkout).
+Output is written to `data/mitgcm/index.duckdb`. To rebuild from scratch:
 
 ```sh
-rm -f data/index.duckdb
-pixi run index
+rm -f data/mitgcm/index.duckdb
+pixi run mitgcm-index
 ```
+
+**Data inputs** — directories walked by the pipeline:
+
+| Directory | Contents |
+|---|---|
+| `MITgcm/model/src/` | Core dynamical kernel |
+| `MITgcm/pkg/` | Optional packages (diagnostics, obcs, kpp, …) |
+| `MITgcm/eesupp/src/` | Execution environment (threading, I/O) |
+
+`MITgcm/verification/` is used by the verification embedder
+(`pixi run mitgcm-embed-verification`) but not by the indexer.
 
 ## Extending the indexer
 
@@ -148,7 +159,7 @@ pixi run index
 4. Add a matching column or table to `schema.py` DDL.
 5. In `pipeline.run()`, add the corresponding `INSERT` loop after the existing
    ones.
-6. Add tests in `tests/indexer/test_extract.py` covering the normal case and
+6. Add tests in `tests/mitgcm/indexer/test_extract.py` covering the normal case and
    at least one edge case (continuation lines, comments, etc.).
 
 ### Changing which directories are indexed
