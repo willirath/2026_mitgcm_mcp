@@ -10,12 +10,16 @@ answer *how to configure it for a given experiment*.
 ## Module layout
 
 ```
+src/shared/
+├── translate.py     translate_lab_params — lab geometry → namelist values
+└── scales.py        check_scales — dimensionless numbers and regime flags
+
 src/mitgcm/domain/
 ├── __init__.py      re-exports public functions
-├── translate.py     translate_lab_params — lab geometry → namelist values
-├── scales.py        check_scales — dimensionless numbers and regime flags
 ├── gotcha.py        lookup_gotcha — static gotcha catalogue + keyword search
-└── suggest.py       suggest_experiment_config — skeleton configs
+├── namelist_map.py  get_namelist_structure — file→group→description map
+├── suggest.py       suggest_experiment_config — skeleton configs
+└── workflow.py      get_workflow — recommended tool workflows
 ```
 
 ---
@@ -27,7 +31,7 @@ src/mitgcm/domain/
 Translates physical lab quantities to MITgcm namelist parameters.
 
 ```python
-from src.domain import translate_lab_params
+from src.shared import translate_lab_params
 
 result = translate_lab_params(
     Lx: float,          # m  — tank length in x (use diameter for cylindrical)
@@ -95,7 +99,7 @@ serialise to JSON or pass over MCP.
 Computes dimensionless numbers and raises flags for a proposed configuration.
 
 ```python
-from src.domain import check_scales
+from src.shared import check_scales
 
 result = check_scales(
     Lx: float,          # m  — domain length in x
@@ -154,14 +158,14 @@ Case-insensitive keyword search over a static catalogue of known
 MITgcm configuration traps.
 
 ```python
-from src.domain import lookup_gotcha
+from src.mitgcm.domain import lookup_gotcha
 
 entries = lookup_gotcha(topic: str) -> list[dict]
 ```
 
 Each returned entry has keys: `title`, `keywords`, `summary`, `detail`.
 
-The catalogue contains ten entries covering:
+The catalogue contains seventeen entries covering:
 1. Non-hydrostatic pressure solve — CPP flag + `useNHMTerms`
 2. Linear EOS in freshwater — `sBeta = 0` in `data.eos`
 3. Spin-up time — O(Ek^{-1/2}) rotation periods
@@ -171,7 +175,14 @@ The catalogue contains ten entries covering:
 7. Diagnostics output frequency — seconds, not time steps
 8. `DIAGNOSTICS_SIZE.h` `numDiags` must cover all requested fields
 9. RBCS mask is dimensionless 0–1; `tauRelaxT` must be non-zero
-10. Vertical CFL limit for explicit advection with convective velocities
+10. `readBinaryPrec` mismatch — Python writes float64, MITgcm reads float32
+11. `INCLUDE_PHIHYD_CALCULATION_CODE` must be `#define`d in `CPP_OPTIONS.h`
+12. `packages.conf` — `gfd` group must be listed, not just individual packages
+13. `SIZE.h` — `MAX_OLX`/`MAX_OLY` `PARAMETER` block required
+14. Vertical CFL limit for explicit advection with convective velocities
+15. Adams-Bashforth 3 — β=0.281105 gives maximum CFL stability limit
+16. `EXACT_CONSERV` is now mandatory — `#undef` causes startup abort
+17. `-mpi` flag required in `genmake2` even for single-process runs
 
 Any keyword phrase from a catalogue entry that appears in the lowercased
 query string triggers a match.  Returns an empty list if no entry matches.
@@ -183,7 +194,7 @@ query string triggers a match.  Returns an empty list if no entry matches.
 Returns a skeleton MITgcm configuration dict for a known experiment class.
 
 ```python
-from src.domain import suggest_experiment_config
+from src.mitgcm.domain import suggest_experiment_config
 
 config = suggest_experiment_config(experiment_type: str) -> dict | None
 ```
@@ -244,7 +255,7 @@ the tool description.
 ## Done-when verification
 
 ```python
-from src.domain import translate_lab_params, check_scales
+from src.shared import translate_lab_params, check_scales
 
 # Cylindrical tank: Lx = Ly = diameter = 2 * 0.4 m
 params = translate_lab_params(Lx=0.8, Ly=0.8, depth=0.2, Omega=0.314, delta_T=2.0, Nx=80, Ny=80, Nz=20)
