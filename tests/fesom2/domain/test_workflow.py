@@ -1,11 +1,11 @@
-"""Unit tests for src/domain/workflow.py."""
+"""Unit tests for src/fesom2/domain/workflow.py."""
 
-from src.mitgcm.domain.workflow import get_workflow
+from src.fesom2.domain.workflow import get_workflow
 
 KNOWN_TASKS = [
     "design_experiment",
     "debug_configuration",
-    "understand_package",
+    "understand_module",
     "explore_code",
 ]
 
@@ -58,13 +58,6 @@ def test_each_step_has_tool_and_purpose():
             assert "purpose" in step, f"{task} step {i} missing purpose"
 
 
-def test_design_experiment_mentions_translate():
-    """design_experiment workflow should reference translate_lab_params_tool."""
-    wf = get_workflow("design_experiment")["design_experiment"]
-    tools = [s["tool"] for s in wf["steps"]]
-    assert "translate_lab_params_tool" in tools
-
-
 def test_case_and_whitespace_normalisation():
     """Task lookup normalises case and spaces."""
     result = get_workflow("Design Experiment")
@@ -114,7 +107,7 @@ def test_meta_agents_md_snippet_mentions_agents_md():
 
 def test_workflow_tool_names_are_known():
     """Every non-None tool referenced in a workflow step must be in the MCP tool registry."""
-    from tests.mitgcm.test_server import EXPECTED_TOOLS
+    from tests.fesom2.test_server import EXPECTED_TOOLS
     for task, wf in get_workflow().items():
         if task == "meta":
             continue

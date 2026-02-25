@@ -185,6 +185,65 @@ _WORKFLOWS: dict = {
 }
 
 
+_META: dict = {
+    "description": (
+        "Meta-guidance for using these MCP tools. "
+        "Returned when get_workflow_tool() is called with no task argument. "
+        "Covers: a minimal CLAUDE.md / AGENTS.md snippet for fresh repos, "
+        "the fallback policy when tools return nothing, "
+        "and the gap report format for logging fallbacks."
+    ),
+    "agents_md_snippet": (
+        "## FESOM2 MCP tools\n\n"
+        "- Call `get_workflow_tool()` at the start of each session to orient yourself.\n"
+        "- Prefer MCP tools over reading FESOM2 source directly.\n"
+        "- When all relevant tools return nothing for a specific question, "
+        "fall back to source using the policy in `get_workflow_tool()['meta']['fallback_policy']`.\n"
+        "- Log each fallback to `data/mcp-gaps.md` using the format in "
+        "`get_workflow_tool()['meta']['gap_report_format']`.\n\n"
+        "Commit this block to CLAUDE.md or AGENTS.md on day one of the project."
+    ),
+    "fallback_policy": [
+        {
+            "situation": "Undecided / just need the answer",
+            "recommendation": "Shallow clone to a temp dir (default)",
+            "command": "git clone --depth 1 https://github.com/FESOM/fesom2 /tmp/fesom2-src",
+            "note": (
+                "Cheap, throwaway, and agents are online by definition. "
+                "Use this unless you have a reason to prefer one of the options below."
+            ),
+            "default": True,
+        },
+        {
+            "situation": "Fine with a persistent local copy",
+            "recommendation": "Full clone to data/fesom2-src/ (gitignored)",
+            "command": "git clone https://github.com/FESOM/fesom2 data/fesom2-src",
+            "note": "Useful if you expect to search the source repeatedly across a session.",
+            "default": False,
+        },
+        {
+            "situation": "Strong git workflow / want version tracking",
+            "recommendation": "Add as a git submodule under data/",
+            "command": "git submodule add https://github.com/FESOM/fesom2 data/fesom2-src",
+            "note": "Use only if you need to pin a specific FESOM2 commit in your repo.",
+            "default": False,
+        },
+    ],
+    "gap_report_format": (
+        "Append one entry per fallback to `data/mcp-gaps.md`:\n\n"
+        "```\n"
+        "## Gap: <short description>\n\n"
+        "- **Wanted**: <what the agent was trying to find out>\n"
+        "- **Tried**: <which MCP tools were called and what they returned>\n"
+        "- **Fell back to**: <shallow clone / full clone / submodule>\n"
+        "- **Found**: <what the agent learned from the source>\n"
+        "```\n\n"
+        "This file explains the agent's reasoning and doubles as a list of "
+        "indexing gaps to file as issues against the MCP server."
+    ),
+}
+
+
 def get_workflow(task: str | None = None) -> dict:
     """Return recommended tool sequences for common FESOM2 tasks.
 
@@ -193,16 +252,18 @@ def get_workflow(task: str | None = None) -> dict:
     task : str or None
         One of ``"design_experiment"``, ``"debug_configuration"``,
         ``"understand_module"``, ``"explore_code"``.
-        If None, all workflows are returned.
+        If None, all workflows plus the "meta" entry are returned.
 
     Returns
     -------
     dict
         Mapping of task name to workflow dict with keys:
         ``description``, ``steps`` (list of ``{tool, purpose}``), ``notes``.
+        When task is None, also includes a "meta" entry with bootstrapping
+        guidance for fresh repos, fallback policy, and gap report format.
         Empty dict if the task name is not recognised.
     """
     if task is not None:
         key = task.lower().strip().replace(" ", "_")
         return {key: _WORKFLOWS[key]} if key in _WORKFLOWS else {}
-    return dict(_WORKFLOWS)
+    return {**_WORKFLOWS, "meta": _META}
