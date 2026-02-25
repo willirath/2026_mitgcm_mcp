@@ -51,21 +51,25 @@ def test_all_tools_have_descriptions():
         assert tool.description, f"{tool.name} has no description"
 
 
-def test_namelist_to_code_unknown_param_returns_warning():
+def test_namelist_to_code_unknown_param_returns_warning(monkeypatch):
     """namelist_to_code_tool should return a warning dict for unknown params."""
-    from src.mitgcm.server import namelist_to_code_tool
+    import src.mitgcm.server as srv
 
-    result = namelist_to_code_tool("completelyUnknownXyz123")
+    monkeypatch.setattr(srv, "namelist_to_code", lambda param: [])
+    result = srv.namelist_to_code_tool("completelyUnknownXyz123")
     assert len(result) == 1
     assert "warning" in result[0]
     assert "search_code_tool" in result[0]["warning"]
 
 
-def test_namelist_to_code_known_param_has_no_warning():
+def test_namelist_to_code_known_param_has_no_warning(monkeypatch):
     """namelist_to_code_tool should return normal results for known params."""
-    from src.mitgcm.server import namelist_to_code_tool
+    import src.mitgcm.server as srv
 
-    result = namelist_to_code_tool("deltaT")
+    fake = [{"id": 1, "name": "ini_parms", "file": "model/src/ini_parms.F",
+             "package": "model", "namelist_group": "PARM03"}]
+    monkeypatch.setattr(srv, "namelist_to_code", lambda param: fake)
+    result = srv.namelist_to_code_tool("deltaT")
     assert len(result) >= 1
     assert "warning" not in result[0]
     assert "name" in result[0]
