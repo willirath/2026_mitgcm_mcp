@@ -55,7 +55,7 @@ docker buildx build \
   --platform linux/amd64,linux/arm64 \
   -t ghcr.io/willirath/ogcmcp:mcp-${VERSION} \
   -t ghcr.io/willirath/ogcmcp:mcp-latest \
-  -f docker/mcp/Dockerfile \
+  -f docker/mitgcm-mcp/Dockerfile \
   --push .
 ```
 
