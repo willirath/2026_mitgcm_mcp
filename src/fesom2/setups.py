@@ -25,6 +25,26 @@ from pathlib import Path
 import yaml
 
 
+# ── Setup-specific notes ──────────────────────────────────────────────────────
+
+_SETUP_NOTES: dict[str, str] = {
+    "toy_neverworld2": (
+        "Idealised Southern-Ocean-like double-gyre on a lon/lat mesh. "
+        "Domain: Lx=60° (≈4700 km at 45°S), latitude -70° to +70°; "
+        "re-entrant channel between -60° and -40° (Ly≈2200 km). "
+        "Depth=4000 m, 15 vertical layers (toy resolution). "
+        "f at channel centre (50°S) ≈ 1.11e-4 rad/s. "
+        "Mesh files and generation script in experiments/fesom2/toy_neverworld2/mesh/."
+    ),
+    "toy_channel_dbgyre": (
+        "Idealised double-gyre channel experiment on a Cartesian mesh."
+    ),
+    "toy_soufflet": (
+        "Idealised baroclinic channel (Soufflet et al. 2016) on a Cartesian mesh."
+    ),
+}
+
+
 # ── Fortran namelist parser ───────────────────────────────────────────────────
 
 
@@ -121,7 +141,7 @@ def _build_reference_record(name: str, nml_paths: dict[str, Path]) -> dict:
         "forcing": None,
         "namelists": namelists,
         "fcheck": {},
-        "notes": "",
+        "notes": _SETUP_NOTES.get(name, ""),
     }
 
 
@@ -143,7 +163,7 @@ def _build_ci_record(name: str, setup_path: Path) -> dict:
         "forcing": raw.get("forcing"),
         "namelists": namelists,
         "fcheck": raw.get("fcheck") or {},
-        "notes": "",
+        "notes": _SETUP_NOTES.get(name, ""),
     }
 
 
