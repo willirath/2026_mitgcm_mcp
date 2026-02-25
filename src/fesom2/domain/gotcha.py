@@ -32,6 +32,7 @@ CATALOGUE: list[dict] = [
         "title": "Mesh must be partitioned with METIS before first run",
         "keywords": [
             "metis", "partition", "partitioning", "part_format", "npart",
+            "n_levels", "n_part", "fesom_meshpart", "fesom_ini",
             "mesh", "fesom.mesh", "mesh files", "parallel", "mpi",
         ],
         "summary": (
