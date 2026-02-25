@@ -95,7 +95,7 @@ VERSION=v2026.02.6
 gh release create ${VERSION} \
   --title "OGCMCP FESOM2 ${VERSION}" \
   --notes "FESOM2 MCP image: \`ghcr.io/willirath/ogcmcp:fesom2-mcp-${VERSION}\`
-FESOM2 runtime image: \`ghcr.io/willirath/ogcmcp:fesom2-${VERSION}\`
+FESOM2 runtime image: \`ghcr.io/willirath/ogcmcp:fesom2-runtime-${VERSION}\`
 
 Install FESOM2 MCP server:
 \`\`\`bash
@@ -125,8 +125,8 @@ Then in a Claude Code session:
 What controls GM diffusivity in FESOM2?
 ```
 
-Expected: `namelist_to_code_tool` returns a result referencing `K_GM` in
-`namelist.oce`.
+Expected: `namelist_to_code_tool` returns a result referencing `K_GM_max` (or `K_GM_min`) in
+`namelist.oce`, group `oce_dyn`.
 
 ---
 

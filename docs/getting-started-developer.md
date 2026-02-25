@@ -138,7 +138,7 @@ claude mcp add --transport stdio --scope user fesom2 -- \
 ## 8. Build Docker images locally
 
 ```bash
-pixi run build-mcp-image           # ogcmcp:latest (MITgcm MCP, amd64)
+pixi run build-mitgcm-mcp-image    # ogcmcp:latest (MITgcm MCP, amd64)
 pixi run build-fesom2-mcp-image    # ogcmcp-fesom2:latest (FESOM2 MCP, amd64)
 ```
 

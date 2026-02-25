@@ -76,7 +76,7 @@ Build time: ~8 min on first run (model download), ~2 min on subsequent runs.
 For local development only (single-arch, not pushed):
 
 ```bash
-pixi run build-mcp-image
+pixi run build-mitgcm-mcp-image
 ```
 
 ### Set package visibility to public
@@ -154,7 +154,9 @@ amd64 QEMU GPG issue.
 
 | Image tag prefix | Purpose | Base | Approx. size |
 |---|---|---|---|
-| `ghcr.io/willirath/ogcmcp:mitgcm-mcp-*` | User-facing MCP server | `python:3.13-slim` | ~515 MB |
+| `ghcr.io/willirath/ogcmcp:mitgcm-mcp-*` | MITgcm MCP server | `python:3.13-slim` | ~515 MB |
 | `ghcr.io/willirath/ogcmcp:mitgcm-runtime-*` | MITgcm build environment for agent Dockerfiles | `debian:bookworm-slim` | ~300 MB |
+| `ghcr.io/willirath/ogcmcp:fesom2-mcp-*` | FESOM2 MCP server | `python:3.13-slim` | ~600 MB |
+| `ghcr.io/willirath/ogcmcp:fesom2-runtime-*` | FESOM2 runtime (experiment execution) | `debian:bookworm-slim` | ~1.4 GB |
 
 Pinned digests for current images are in the respective Dockerfiles under `docker/`.

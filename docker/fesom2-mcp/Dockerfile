@@ -39,8 +39,12 @@ WORKDIR /app
 COPY src/ /app/src/
 
 # Pre-built FESOM2 indices (DuckDB + ChromaDB) — must exist before docker build
-# Build with: pixi run fesom2-index && pixi run fesom2-embed && pixi run fesom2-embed-docs
+# Build with: pixi run fesom2-index && pixi run fesom2-embed && pixi run fesom2-embed-docs && pixi run fesom2-embed-namelists
 COPY data/fesom2/ /app/data/fesom2/
+
+# FESOM2 reference namelists and CI setups — needed by list_setups_tool at runtime
+COPY FESOM2/config/ /app/FESOM2/config/
+COPY FESOM2/setups/ /app/FESOM2/setups/
 
 COPY docker/fesom2-mcp/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh && \

@@ -20,10 +20,11 @@ codex mcp add mitgcm -- docker run --rm -i ghcr.io/willirath/ogcmcp:mitgcm-mcp-v
 ## Development use
 
 ```sh
-pixi run serve
+pixi run mitgcm-serve   # MITgcm MCP server
+pixi run fesom2-serve   # FESOM2 MCP server
 ```
 
-The `.mcp.json` in the repo root points Claude Code at `pixi run serve`
+The `.mcp.json` in the repo root points Claude Code at these tasks
 when working inside the repository.
 
 ## Tools

@@ -165,9 +165,9 @@ Both servers start automatically when a tool is first called.
 > What controls GM diffusivity in FESOM2? Which module reads the parameter and in which namelist group?
 
 **Pass criteria:**
-- Returns `K_GM` (case-insensitive)
-- Identifies the reading module (e.g. a config or oce module)
-- Namelist group references `namelist_oce` or similar
+- Returns `K_GM_max` or `K_GM_min` (the actual FESOM2 GM diffusivity parameters; `K_GM` alone is not a valid parameter name)
+- Identifies the reading module (e.g. `o_PARAM` in `oce_modules`)
+- Namelist group references `oce_dyn` in `namelist.oce`
 
 ---
 
@@ -309,7 +309,7 @@ absence of "not found" is sufficient).
 | A9 Namelist structure | MITgcm MCP | No |
 | A10 Package navigation | MITgcm MCP | No |
 | B1 Tool count (20) | FESOM2 MCP | Yes |
-| B2 Namelist → `K_GM` | FESOM2 MCP | Yes |
+| B2 Namelist → `K_GM_max` | FESOM2 MCP | Yes |
 | B3 Module navigation | FESOM2 MCP | Yes |
 | B4 Docs + namelist search | FESOM2 MCP | Yes |
 | B5 Setups catalogue | FESOM2 MCP | Yes |
